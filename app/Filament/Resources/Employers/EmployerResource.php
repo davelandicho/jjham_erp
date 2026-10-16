@@ -16,6 +16,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Filament\Notifications\Notification;
 
 class EmployerResource extends Resource
 {
@@ -65,7 +66,18 @@ class EmployerResource extends Resource
             ])
             ->recordActions([
                 EditAction::make(),
-                DeleteAction::make(),
+                DeleteAction::make()
+                    ->before(function (DeleteAction $action, Employer $record) {
+                        if ($record->jobOrders()->exists()) {
+                            Notification::make()
+                                ->danger()
+                                ->title('Cannot delete employer')
+                                ->body('This employer still has job orders. Delete or reassign them first.')
+                                ->send();
+
+                            $action->cancel();
+                        }
+                    }),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

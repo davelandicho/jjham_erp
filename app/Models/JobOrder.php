@@ -12,12 +12,11 @@ class JobOrder extends Model
         'position',
         'openings',
         'salary',
-        'total_fee',
         'notes',
     ];
 
     public function employer(): BelongsTo
     {
-        return $this->belongsTo(employer::class);
+        return $this->belongsTo(Employer::class);
     }
 }
