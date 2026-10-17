@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Enums\ApplicationStatus;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Application extends Model
 {
@@ -36,10 +37,21 @@ class Application extends Model
 
     protected static function booted(): void
     {
-        static::saving(function (Application $application) {
-            if ($application->isDirty('status') || ! $application->status_changed_at) {
-                $application->status_changed_at = now();
+        static::saved(function (Application $application) {
+            if ($application->wasRecentlyCreated || $application->wasChanged('status')) {
+                $application->histories()->create([
+                    'from_status' => $application->wasRecentlyCreated
+                        ? null
+                        : $application->getOriginal('status'),
+                    'to_status' => $application->status,
+                    'changed_by' => auth()->id(),
+                ]);
             }
         });
+    }
+
+    public function histories(): HasMany
+    {
+        return $this->hasMany(StatusHistory::class)->latest('id');
     }
 }

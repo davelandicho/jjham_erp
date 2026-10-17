@@ -26,6 +26,7 @@ use Filament\Actions\ViewAction;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Support\Enums\Width;
+use Filament\Infolists\Components\RepeatableEntry;
 
 class ApplicationResource extends Resource
 {
@@ -94,7 +95,7 @@ class ApplicationResource extends Resource
             ->recordActions([
                 ViewAction::make()
                     ->slideOver()
-                    ->modalWidth(Width::ThreeExtraLarge),
+                    ->modalWidth(Width::FiveExtraLarge),
                 EditAction::make(),
                 DeleteAction::make(),
             ])
@@ -110,7 +111,7 @@ class ApplicationResource extends Resource
             ->columns(1)
             ->components([
                 Section::make('Case')
-                    ->columns(2)
+                    ->columns(4)
                     ->columnSpan(1)
                     ->schema([
                         TextEntry::make('status')->badge(),
@@ -120,7 +121,7 @@ class ApplicationResource extends Resource
                     ]),
 
                 Section::make('Applicant')
-                    ->columns(2)
+                    ->columns(5)
                     ->columnSpan(1)
                     ->schema([
                         TextEntry::make('applicant.last_name')->label('Last name'),
@@ -131,13 +132,36 @@ class ApplicationResource extends Resource
                     ]),
 
                 Section::make('Job order')
-                    ->columns(2)
+                    ->columns(4)
                     ->columnSpanFull()
                     ->schema([
                         TextEntry::make('jobOrder.position')->label('Position'),
                         TextEntry::make('jobOrder.employer.name')->label('Employer'),
                         TextEntry::make('jobOrder.salary')->label('Salary')->money('AED')->placeholder('—'),
                         TextEntry::make('jobOrder.openings')->label('Openings'),
+                    ]),
+                Section::make('Status history')
+                    ->columnSpanFull()
+                    ->schema([
+                        RepeatableEntry::make('histories')
+                            ->hiddenLabel()
+                            ->placeholder('No status changes recorded yet.')
+                            ->columns(4)
+                            ->schema([
+                                TextEntry::make('from_status')
+                                    ->label('From')
+                                    ->badge()
+                                    ->placeholder('Created'),
+                                TextEntry::make('to_status')
+                                    ->label('To')
+                                    ->badge(),
+                                TextEntry::make('user.name')
+                                    ->label('Changed by')
+                                    ->placeholder('System'),
+                                TextEntry::make('created_at')
+                                    ->label('When')
+                                    ->dateTime('M j, Y g:i A'),
+                            ]),
                     ]),
             ]);
     }
