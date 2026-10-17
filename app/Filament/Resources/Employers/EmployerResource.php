@@ -80,9 +80,7 @@ class EmployerResource extends Resource
                     }),
             ])
             ->toolbarActions([
-                BulkActionGroup::make([
                     DeleteBulkAction::make(),
-                ]),
             ]);
     }
 

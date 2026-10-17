@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Elonquent\Relations\HasMany;
 
 class JobOrder extends Model
 {
@@ -18,5 +19,10 @@ class JobOrder extends Model
     public function employer(): BelongsTo
     {
         return $this->belongsTo(Employer::class);
+    }
+
+    public function applications(): HasMany
+    {
+        return $this->hasMany(Application::class);
     }
 }

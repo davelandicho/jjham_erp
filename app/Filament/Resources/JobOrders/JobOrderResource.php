@@ -82,9 +82,7 @@ class JobOrderResource extends Resource
                 DeleteAction::make(),
             ])
             ->toolbarActions([
-                BulkActionGroup::make([
                     DeleteBulkAction::make(),
-                ]),
             ]);
     }
 

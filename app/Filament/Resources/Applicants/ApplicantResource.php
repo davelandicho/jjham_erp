@@ -149,15 +149,14 @@ class ApplicantResource extends Resource
             ->recordActions([
                 ViewAction::make()
                     ->slideOver()
+                    ->modalWidth(Width::FiveExtraLarge),
+                EditAction::make()
                     ->modalWidth(Width::FourExtraLarge),
-                EditAction::make()->modalWidth(Width::FourExtraLarge),
                 DeleteAction::make(),
             ])
             ->recordAction(ViewAction::class)
             ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
+                DeleteBulkAction::make()
             ]);
     }
 
@@ -180,12 +179,12 @@ class ApplicantResource extends Resource
                 ]),
 
             Section::make('Contact')
-                ->columns(3)
+                ->columns(2)
                 ->schema([
                     TextEntry::make('mobile')->placeholder('—'),
-                    TextEntry::make('whatsapp')->placeholder('—'),
+                    TextEntry::make('whatsapp')->label('WhatsApp')->placeholder('—'),
                     TextEntry::make('email')->label('Email address')->placeholder('—'),
-                    TextEntry::make('address')->columnSpanFull()->placeholder('—'),
+                    TextEntry::make('address')->placeholder('—'),
                     TextEntry::make('emergency_contact_name')->label('Emergency contact')->placeholder('—'),
                     TextEntry::make('emergency_contact_number')->label('Emergency number')->placeholder('—'),
                 ]),
