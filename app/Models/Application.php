@@ -37,6 +37,23 @@ class Application extends Model
 
     protected static function booted(): void
     {
+        static::saving(function (Application $application) {
+            if ($application->exists && $application->isDirty('status')) {
+                $from = $application->getOriginal('status');
+                $from = $from instanceof ApplicationStatus ? $from : ApplicationStatus::from($from);
+
+                if (! $from->canMoveTo($application->status)) {
+                    throw new \DomainException(
+                        "Cannot move from {$from->getLabel()} to {$application->status->getLabel()}."
+                    );
+                }
+            }
+
+            if ($application->isDirty('status') || ! $application->status_changed_at) {
+                $application->status_changed_at = now();
+            }
+        });
+
         static::saved(function (Application $application) {
             if ($application->wasRecentlyCreated || $application->wasChanged('status')) {
                 $application->histories()->create([

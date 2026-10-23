@@ -24,15 +24,16 @@ class StaffPanelProvider extends PanelProvider
     public function panel(Panel $panel): Panel
     {
         return $panel
-            ->brandName('JJHAM International Recruitment Agency Inc.')
+            ->brandLogo(asset('images/logo.png'))
+            ->brandLogoHeight('5rem')
             ->default()
             ->id('staff')
             ->path('staff')
             ->login()
             ->colors([
-                'primary' => Color::hex('#674ccc'),
-                'danger' => Color::hex('#ff0000'),
+                'primary' => Color::hex('#0f9cae'),
             ])
+            ->font('League Spartan')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([

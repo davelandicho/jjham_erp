@@ -68,4 +68,45 @@ enum ApplicationStatus: string implements HasLabel, HasColor
             self::Withdrawn, self::Closed => 'gray',
         };
     }
+
+    /** @return array<int, self> */
+    public function allowedNext(): array
+    {
+        return match ($this) {
+            self::Registered => [self::DocumentsIncomplete, self::ForMedical],
+            self::DocumentsIncomplete => [self::Registered, self::ForMedical],
+            self::ForMedical => [self::MedicalFit, self::MedicalUnfit],
+            self::MedicalUnfit => [self::ForMedical, self::Closed],
+            self::MedicalFit => [self::SentToEmployer],
+            self::SentToEmployer => [self::AwaitingOffer],
+            self::AwaitingOffer => [self::OfferForSignature, self::Closed],
+            self::OfferForSignature => [self::ContractProcessing, self::Closed],
+            self::ContractProcessing => [self::PaymentDue, self::VisaProcessing],
+            self::PaymentDue => [self::VisaProcessing],
+            self::VisaProcessing => [self::VisaReleased, self::Closed],
+            self::VisaReleased => [self::RfpSubmitted],
+            self::RfpSubmitted => [self::ExitClearanceIssued],
+            self::ExitClearanceIssued => [self::ReadyForDeployment],
+            self::ReadyForDeployment => [self::Departed],
+            self::Departed => [self::Arrived],
+            self::Arrived => [],
+            self::OnHold => [self::Registered, self::ForMedical, self::SentToEmployer,
+                self::AwaitingOffer, self::ContractProcessing, self::VisaProcessing],
+            self::Withdrawn, self::Closed => [],
+        };
+    }
+
+    public function canMoveTo(self $next): bool
+    {
+        if ($next === $this) {
+            return true;
+        }
+
+        // The PDF: Withdrawn and On Hold can be reached from any open status.
+        if (in_array($next, [self::Withdrawn, self::OnHold], true)) {
+            return ! in_array($this, [self::Withdrawn, self::Closed, self::Arrived], true);
+        }
+
+        return in_array($next, $this->allowedNext(), true);
+    }
 }

@@ -53,8 +53,15 @@ class ApplicationResource extends Resource
                     ->preload()
                     ->required(),
                 Select::make('status')
-                    ->options(ApplicationStatus::class)
-                    ->default(ApplicationStatus::Registered)
+                    ->options(function (?Application $record) {
+                        $current = $record?->status ?? ApplicationStatus::Registered;
+
+                        return collect(ApplicationStatus::cases())
+                            ->filter(fn (ApplicationStatus $case) => $current->canMoveTo($case))
+                            ->mapWithKeys(fn (ApplicationStatus $case) => [$case->value => $case->getLabel()])
+                            ->all();
+                        })
+                    ->default(ApplicationStatus::Registered->value)
                     ->required(),
                 Textarea::make('remarks')
                     ->columnSpanFull(),

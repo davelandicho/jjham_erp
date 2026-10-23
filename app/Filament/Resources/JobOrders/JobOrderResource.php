@@ -54,12 +54,13 @@ class JobOrderResource extends Resource
     {
         return $table
             ->columns([
+                TextColumn::make('position')
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('employer.name')
                     ->label('Employer')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('position')
-                    ->searchable(),
                 TextColumn::make('openings')
                     ->numeric()
                     ->sortable(),
