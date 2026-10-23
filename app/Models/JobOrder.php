@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class JobOrder extends Model
 {
@@ -24,5 +25,10 @@ class JobOrder extends Model
     public function applications(): HasMany
     {
         return $this->hasMany(Application::class);
+    }
+
+    public function documentTypes(): BelongsToMany
+    {
+        return $this->belongsToMany(DocumentType::class)->withTimeStamps();
     }
 }

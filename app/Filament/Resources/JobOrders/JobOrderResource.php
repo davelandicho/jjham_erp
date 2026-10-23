@@ -17,6 +17,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\CheckboxList;
 
 class JobOrderResource extends Resource
 {
@@ -47,6 +48,12 @@ class JobOrderResource extends Resource
                     ->default(0),
                 Textarea::make('notes')
                     ->columnSpanFull(),
+                CheckboxList::make('documentTypes')
+                    ->label('Required documents (checklist)')
+                    ->relationship('documentTypes', 'name')
+                    ->columns(3)
+                    ->bulkToggleable()
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -60,6 +67,11 @@ class JobOrderResource extends Resource
                 TextColumn::make('employer.name')
                     ->label('Employer')
                     ->searchable()
+                    ->sortable(),
+                TextColumn::make('document_types_count')
+                    ->label('Checklist')
+                    ->counts('documentTypes')
+                    ->suffix(' docs')
                     ->sortable(),
                 TextColumn::make('openings')
                     ->numeric()
