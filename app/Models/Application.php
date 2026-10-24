@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Enums\ApplicationStatus;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Enums\DocumentStatus;
+use App\Enums\MedicalResultStatus;
 
 class Application extends Model
 {
@@ -49,6 +50,10 @@ class Application extends Model
                     );
                 }
             }
+            
+            if ($application->isDirty('status')) {
+                $application->ensureMedicalAllows($application->status);
+            }
 
             if ($application->isDirty('status') || ! $application->status_changed_at) {
                 $application->status_changed_at = now();
@@ -78,6 +83,11 @@ class Application extends Model
         return $this->hasMany(Document::class)->latest('id');
     }
 
+    public function medicalResults(): HasMany
+    {
+        return $this->hasMany(MedicalResult::class)->latest('id');
+    }
+
     public function documentChecklist(): array
     {
         $latest = $this->documents()->get()->unique('document_type_id')->keyBy('document_type_id');
@@ -105,5 +115,26 @@ class Application extends Model
         $verified = $items->filter(fn (array $item) => $item['status'] === DocumentStatus::Verified)->count();
 
         return "{$verified} of {$items->count()} verified";
+    }
+
+    public function ensureMedicalAllows(ApplicationStatus $to): void
+    {
+        $needed = match ($to) {
+            ApplicationStatus::MedicalFit => MedicalResultStatus::Fit,
+            ApplicationStatus::MedicalUnfit => MedicalResultStatus::Unfit,
+            default => null,
+        };
+
+        if ($needed === null) {
+            return;
+        }
+
+        $latest = $this->medicalResults()->first();
+
+        if (! $latest || $latest->result !== $needed || ! $latest->isVerified()) {
+            throw new \DomainException(
+                "Cannot move to {$to->getLabel()}: the latest medical result must be a verified {$needed->getLabel()}."
+            );
+        }
     }
 }

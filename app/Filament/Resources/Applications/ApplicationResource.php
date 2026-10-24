@@ -27,6 +27,8 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Support\Enums\Width;
 use Filament\Infolists\Components\RepeatableEntry;
+use Closure;
+
 
 class ApplicationResource extends Resource
 {
@@ -60,9 +62,23 @@ class ApplicationResource extends Resource
                             ->filter(fn (ApplicationStatus $case) => $current->canMoveTo($case))
                             ->mapWithKeys(fn (ApplicationStatus $case) => [$case->value => $case->getLabel()])
                             ->all();
-                        })
+                    })
                     ->default(ApplicationStatus::Registered->value)
-                    ->required(),
+                    ->required()
+                    ->rules([
+                        // Shows the model's medical rule as a form error instead of a crash page.
+                        fn (?Application $record): Closure => function (string $attribute, $value, Closure $fail) use ($record) {
+                            if (! $record || $record->status->value === $value) {
+                                return;
+                            }
+
+                            try {
+                                $record->ensureMedicalAllows(ApplicationStatus::from($value));
+                            } catch (\DomainException $e) {
+                                $fail($e->getMessage());
+                            }
+                        },
+                    ]),
                 Textarea::make('remarks')
                     ->columnSpanFull(),
             ]);
