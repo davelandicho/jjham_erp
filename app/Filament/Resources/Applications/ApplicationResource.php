@@ -147,6 +147,33 @@ class ApplicationResource extends Resource
                         TextEntry::make('jobOrder.salary')->label('Salary')->money('AED')->placeholder('—'),
                         TextEntry::make('jobOrder.openings')->label('Openings'),
                     ]),
+                Section::make('Document checklist')
+                    ->columnSpanFull()
+                    ->description(fn (Application $record) => $record->checklistSummary())
+                    ->schema([
+                        RepeatableEntry::make('checklist')
+                            ->hiddenLabel()
+                            ->state(fn (Application $record) => $record->documentChecklist())
+                            ->placeholder('This job order has no required documents yet.')
+                            ->columns(5)
+                            ->schema([
+                                TextEntry::make('name')
+                                    ->label('Document'),
+                                TextEntry::make('status')
+                                    ->badge()
+                                    ->placeholder('Not uploaded'),
+                                TextEntry::make('version')
+                                    ->formatStateUsing(fn (int $state) => "v{$state}")
+                                    ->placeholder('—'),
+                                TextEntry::make('expiry_date')
+                                    ->label('Expires')
+                                    ->date('M j, Y')
+                                    ->placeholder('—'),
+                                TextEntry::make('note')
+                                    ->label('Rejection reason')
+                                    ->placeholder('—'),
+                            ]),
+                    ]),
                 Section::make('Status history')
                     ->columnSpanFull()
                     ->schema([
