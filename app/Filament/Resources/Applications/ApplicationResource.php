@@ -66,15 +66,15 @@ class ApplicationResource extends Resource
                     ->default(ApplicationStatus::Registered->value)
                     ->required()
                     ->rules([
-                        // Shows the model's medical rule as a form error instead of a crash page.
-                        fn (?Application $record): Closure => function (string $attribute, $value, Closure $fail) use ($record) {
+                        // Shows the model's business rules (medical, employer…) as a form error instead of a crash page.
+                            fn (?Application $record): Closure => function (string $attribute, $value, Closure $fail) use ($record) {
                             if (! $record || $record->status->value === $value) {
                                 return;
                             }
 
                             try {
-                                $record->ensureMedicalAllows(ApplicationStatus::from($value));
-                            } catch (\DomainException $e) {
+                                $record->ensureRequirementsMet(ApplicationStatus::from($value));                            
+                                } catch (\DomainException $e) {
                                 $fail($e->getMessage());
                             }
                         },

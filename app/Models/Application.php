@@ -8,6 +8,7 @@ use App\Enums\ApplicationStatus;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Enums\DocumentStatus;
 use App\Enums\MedicalResultStatus;
+use App\Enums\EmployerCommunicationType;
 
 class Application extends Model
 {
@@ -52,7 +53,7 @@ class Application extends Model
             }
             
             if ($application->isDirty('status')) {
-                $application->ensureMedicalAllows($application->status);
+                $application->ensureRequirementsMet($application->status);
             }
 
             if ($application->isDirty('status') || ! $application->status_changed_at) {
@@ -86,6 +87,11 @@ class Application extends Model
     public function medicalResults(): HasMany
     {
         return $this->hasMany(MedicalResult::class)->latest('id');
+    }
+
+    public function employerCommunications(): HasMany
+    {
+        return $this->hasMany(EmployerCommunication::class)->latest('id');
     }
 
     public function documentChecklist(): array
@@ -136,5 +142,31 @@ class Application extends Model
                 "Cannot move to {$to->getLabel()}: the latest medical result must be a verified {$needed->getLabel()}."
             );
         }
+    }
+
+        public function ensureEmployerAllows(ApplicationStatus $to): void
+    {
+        $needed = match ($to) {
+            ApplicationStatus::SentToEmployer => EmployerCommunicationType::PacketSent,
+            ApplicationStatus::AwaitingOffer => EmployerCommunicationType::Acknowledgement,
+            ApplicationStatus::OfferForSignature => EmployerCommunicationType::OfferLetter,
+            default => null,
+        };
+
+        if ($needed === null) {
+            return;
+        }
+
+        if (! $this->employerCommunications()->where('type', $needed->value)->exists()) {
+            throw new \DomainException(
+                "Cannot move to {$to->getLabel()}: log a \"{$needed->getLabel()}\" entry in the employer log first."
+            );
+        }
+    }
+
+    public function ensureRequirementsMet(ApplicationStatus $to): void
+    {
+        $this->ensureMedicalAllows($to);
+        $this->ensureEmployerAllows($to);
     }
 }
