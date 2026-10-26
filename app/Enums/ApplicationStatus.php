@@ -11,7 +11,6 @@ enum ApplicationStatus: string implements HasLabel, HasColor
     case DocumentsIncomplete = 'documents_incomplete';
     case ForMedical = 'for_medical';
     case MedicalFit = 'medical_fit';
-    case MedicalUnfit = 'medical_unfit';
     case SentToEmployer = 'sent_to_employer';
     case AwaitingOffer = 'awaiting_offer';
     case OfferForSignature = 'offer_for_signature';
@@ -35,7 +34,6 @@ enum ApplicationStatus: string implements HasLabel, HasColor
             self::DocumentsIncomplete => 'Documents Incomplete',
             self::ForMedical => 'For Medical',
             self::MedicalFit => 'Medical Fit',
-            self::MedicalUnfit => 'Medical Unfit',
             self::SentToEmployer => 'Sent to Employer',
             self::AwaitingOffer => 'Awaiting Offer',
             self::OfferForSignature => 'Offer for Signature',
@@ -58,7 +56,7 @@ enum ApplicationStatus: string implements HasLabel, HasColor
     {
         return match ($this) {
             self::Registered, self::DocumentsIncomplete => 'gray',
-            self::ForMedical, self::MedicalFit, self::MedicalUnfit => 'warning',
+            self::ForMedical, self::MedicalFit => 'warning',
             self::SentToEmployer, self::AwaitingOffer, self::OfferForSignature,
             self::ContractProcessing => 'info',
             self::PaymentDue, self::OnHold => 'danger',
@@ -75,8 +73,7 @@ enum ApplicationStatus: string implements HasLabel, HasColor
         return match ($this) {
             self::Registered => [self::DocumentsIncomplete, self::ForMedical],
             self::DocumentsIncomplete => [self::Registered, self::ForMedical],
-            self::ForMedical => [self::MedicalFit, self::MedicalUnfit],
-            self::MedicalUnfit => [self::ForMedical, self::Closed],
+            self::ForMedical => [self::MedicalFit],
             self::MedicalFit => [self::SentToEmployer],
             self::SentToEmployer => [self::AwaitingOffer],
             self::AwaitingOffer => [self::OfferForSignature, self::Closed],

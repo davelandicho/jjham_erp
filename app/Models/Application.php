@@ -127,7 +127,6 @@ class Application extends Model
     {
         $needed = match ($to) {
             ApplicationStatus::MedicalFit => MedicalResultStatus::Fit,
-            ApplicationStatus::MedicalUnfit => MedicalResultStatus::Unfit,
             default => null,
         };
 
