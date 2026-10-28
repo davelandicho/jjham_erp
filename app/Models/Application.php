@@ -10,6 +10,7 @@ use App\Enums\DocumentStatus;
 use App\Enums\MedicalResultStatus;
 use App\Enums\EmployerCommunicationType;
 use App\Enums\OfferStatus;
+use App\Enums\ContractType;
 
 class Application extends Model
 {
@@ -100,6 +101,11 @@ class Application extends Model
         return $this->hasMany(Offer::class)->latest('id');
     }
 
+    public function contracts(): HasMany
+    {
+        return $this->hasMany(Contract::class)->latest('id');
+    }
+
     public function documentChecklist(): array
     {
         $latest = $this->documents()->get()->unique('document_type_id')->keyBy('document_type_id');
@@ -182,10 +188,30 @@ class Application extends Model
         }
     }
 
+    public function ensureContractsAllow(ApplicationStatus $to): void
+    {
+        if (! in_array($to, [ApplicationStatus::PaymentDue, ApplicationStatus::VisaProcessing], true)) {
+            return;
+        }
+
+        foreach (ContractType::cases() as $type) {
+            $latest = $this->contracts()->where('type', $type->value)->first();
+
+            if (! $latest || ! $latest->isComplete()) {
+                $needed = $type->needsMwoVerification() ? 'signed and MWO-verified' : 'signed';
+
+                throw new \DomainException(
+                    "Cannot move to {$to->getLabel()}: the latest {$type->getLabel()} must be {$needed}."
+                );
+            }
+        }
+    }
+
     public function ensureRequirementsMet(ApplicationStatus $to): void
     {
         $this->ensureMedicalAllows($to);
         $this->ensureEmployerAllows($to);
         $this->ensureOfferAllows($to);
+        $this->ensureContractsAllow($to);
     }
 }
