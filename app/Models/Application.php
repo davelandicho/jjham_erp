@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Enums\DocumentStatus;
 use App\Enums\MedicalResultStatus;
 use App\Enums\EmployerCommunicationType;
+use App\Enums\OfferStatus;
 
 class Application extends Model
 {
@@ -94,6 +95,11 @@ class Application extends Model
         return $this->hasMany(EmployerCommunication::class)->latest('id');
     }
 
+    public function offers(): HasMany
+    {
+        return $this->hasMany(Offer::class)->latest('id');
+    }
+
     public function documentChecklist(): array
     {
         $latest = $this->documents()->get()->unique('document_type_id')->keyBy('document_type_id');
@@ -143,7 +149,7 @@ class Application extends Model
         }
     }
 
-        public function ensureEmployerAllows(ApplicationStatus $to): void
+    public function ensureEmployerAllows(ApplicationStatus $to): void
     {
         $needed = match ($to) {
             ApplicationStatus::SentToEmployer => EmployerCommunicationType::PacketSent,
@@ -163,9 +169,23 @@ class Application extends Model
         }
     }
 
+    public function ensureOfferAllows(ApplicationStatus $to): void
+    {
+        if ($to !== ApplicationStatus::ContractProcessing) {
+            return;
+        }
+
+        if ($this->offers()->first()?->status !== OfferStatus::Signed) {
+            throw new \DomainException (
+                "Cannot move to {$to->getLabel()}: the latest offer must be Signed."
+            );
+        }
+    }
+
     public function ensureRequirementsMet(ApplicationStatus $to): void
     {
         $this->ensureMedicalAllows($to);
         $this->ensureEmployerAllows($to);
+        $this->ensureOfferAllows($to);
     }
 }
