@@ -11,6 +11,7 @@ class MedicalResult extends Model
 {
     protected $fillable = [
         'application_id',
+        'clinic_id',
         'clinic',
         'exam_date',
         'result',
@@ -38,8 +39,12 @@ class MedicalResult extends Model
         static::saving(function (MedicalResult $medical) {
             $medical->encoded_by ??= auth()->id();
 
-            if (! $medical->exists || $medical->isDirty(['result', 'source', 'valid_until'])) {
-                if ($medical->source->isFromClinic()) {
+            if ($medical->clinic_id && $medical->isDirty('clinic_id')) {
+                $medical->clinic = Clinic::whereKey($medical->clinic_id)->value('name');
+            }
+
+            if (! $medical->exists || $medical->isDirty(['result', 'source', 'valid_until', 'clinic_id'])) {
+                if ($medical->isFromPreferredClinic()) {
                     $medical->verified_by = auth()->id();
                     $medical->verified_at = now();
                 } else {
@@ -57,6 +62,11 @@ class MedicalResult extends Model
     public function isVerified(): bool
     {
         return $this->verified_at !== null;
+    }
+
+    public function isFromPreferredClinic(): bool
+    {
+        return $this->clinic_id !== null && $this->source->isFromClinic();
     }
 
     public const EXPIRY_WARNING_DAYS = 60;
@@ -77,6 +87,11 @@ class MedicalResult extends Model
     public function application(): BelongsTo
     {
         return $this->belongsTo(Application::class);
+    }
+
+    public function preferredClinic(): BelongsTo
+    {
+        return $this->belongsTo(Clinic::class, 'clinic_id');
     }
 
     public function encoder(): BelongsTo

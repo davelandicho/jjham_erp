@@ -24,6 +24,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Clinic;
 
 class MedicalResultResource extends Resource
 {
@@ -54,9 +55,21 @@ class MedicalResultResource extends Resource
                     ->required()
                     ->disabledOn('edit'), // a result never moves to another application
 
-                TextInput::make('clinic')
-                    ->required()
-                    ->maxLength(255),
+                Select::make('clinic_id')
+                    ->label('Clinic')
+                    ->options(fn (?MedicalResult $record) => Clinic::active()
+                        ->orWhere('id', $record?->clinic_id)
+                        ->orderBy('name')
+                        ->pluck('name', 'id'))
+                    ->placeholder('Other Clinic')
+                    ->helperText('Leave empty for an applicant who used another clinic.')
+                    ->live(),
+
+                    TextInput::make('clinic')
+                        ->label('Other clinic name')
+                        ->visible(fn (Get $get): bool => blank($get('clinic_id')))
+                        ->required(fn (Get $get): bool => blank($get('clinic_id')))
+                        ->maxLength(255),
 
                 DatePicker::make('exam_date')
                     ->required()
@@ -75,7 +88,7 @@ class MedicalResultResource extends Resource
 
                 Select::make('source')
                     ->options(MedicalSource::class)
-                    ->helperText('Results brought by the applicant stay Unverified until you confirm with the clinic.')
+                    ->helperText('Verified automatically only for a preferred clinic. Other clinics or applicant-brought results need Verify.')
                     ->required(),
 
                 FileUpload::make('certificate_path')
@@ -109,6 +122,7 @@ class MedicalResultResource extends Resource
                     ->toggleable(),
                 TextColumn::make('clinic')
                     ->searchable()
+                    ->description(fn (MedicalResult $record) => $record->clinic_id ? null : 'Other Clinic')
                     ->toggleable(),
                 TextColumn::make('exam_date')
                     ->date('M j, Y')
