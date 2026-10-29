@@ -113,6 +113,11 @@ class Application extends Model
         return $this->hasMany(Payment::class)->latest('id');
     }
 
+    public function visas(): HasMany
+    {
+        return $this->hasMany(Visa::class)->latest('id');
+    }
+
     public function amountPaid(): float
     {
         return round((float) $this->payments()->whereNull('voided_at')->sum('amount'), 2);
@@ -237,10 +242,29 @@ class Application extends Model
 
         if ($to === ApplicationStatus::VisaProcessing && ! $this->isFullyPaid()) {
             $balance = number_format($this->balance(), 2);
-            
+
             throw new \DomainException(
                 "Cannot move to {$to->getLabel()}: ₱{$balance} of the fee is still unpaid."
             );
+        }
+    }
+
+    public function ensureVisaAllows(ApplicationStatus $to): void
+    {
+        if ($to !== ApplicationStatus::VisaReleased) {
+            return;
+        }
+
+        $latest = $this->visas()->first();
+
+        if (! $latest || ! $latest->isUsable()) {
+            $problem = match (true) {
+                ! $latest => 'no visa has been recorded yet',
+                $latest->isExpired() => 'the latest visa has expired',
+                default => "the latest visa is still {$latest->status->getLabel()}",
+            };
+
+            throw new \DomainException("Cannot move to {$to->getLabel()}: {$problem}.");
         }
     }
 
@@ -251,5 +275,6 @@ class Application extends Model
         $this->ensureOfferAllows($to);
         $this->ensureContractsAllow($to);
         $this->ensurePaymentAllows($to);
+        $this->ensureVisaAllows($to);
     }
 }

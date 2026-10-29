@@ -188,6 +188,32 @@ class ApplicationResource extends Resource
                             ->money('PHP')
                             ->color(fn (Application $record) => $record->isFullyPaid() ? 'success' : 'danger'),
                     ]),
+                Section::make('Visa')
+                    ->columns(4)
+                    ->columnSpanFull()
+                    ->schema([
+                        TextEntry::make('latest_visa_status')
+                            ->label('Status')
+                            ->state(fn (Application $record) => $record->visas()->first()?->status)
+                            ->badge()
+                            ->placeholder('Not applied'),
+                        TextEntry::make('latest_visa_number')
+                            ->label('Released')
+                            ->state(fn (Application $record) => $record->visas()->first()?->visa_number)
+                            ->placeholder('-'),
+                        TextEntry::make('latest_visa_released')
+                            ->label('Released')
+                            ->state(fn (Application $record) => $record->visas()->first()?->released_on)
+                            ->date('M j, Y')
+                            ->placeholder('-'),
+                        TextEntry::make('latest_visa_expires')
+                            ->label('Expires')
+                            ->state(fn (Application $record) => $record->visas()->first()?->expires_on)
+                            ->date('M j, Y')
+                            ->placeholder('-')
+                            ->color(fn (Application $record) => $record->visas()->first()?->isExpired() ? 'danger' : null)
+                            ->placeholder('-'),
+                    ]),
                 Section::make('Document checklist')
                     ->columnSpanFull()
                     ->description(fn (Application $record) => $record->checklistSummary())
