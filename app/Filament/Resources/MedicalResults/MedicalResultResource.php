@@ -128,7 +128,8 @@ class MedicalResultResource extends Resource
                     ->date('M j, Y')
                     ->sortable(),
                 TextColumn::make('result')
-                    ->badge(),
+                    ->badge()
+                    ->toggleable(),
                 TextColumn::make('source')
                     ->toggleable(),
                 IconColumn::make('is_verified')

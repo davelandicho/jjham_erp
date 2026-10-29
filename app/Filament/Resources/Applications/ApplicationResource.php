@@ -79,6 +79,14 @@ class ApplicationResource extends Resource
                             }
                         },
                     ]),
+                TextInput::make('fee')
+                    ->label('Fee')
+                    ->numeric()
+                    ->prefix('₱')
+                    ->minValue(0)
+                    ->default(0)
+                    ->required()
+                    ->helperText('Leave at 0 if this job order charges no fee'),
                 Textarea::make('remarks')
                     ->columnSpanFull(),
             ]);
@@ -162,6 +170,23 @@ class ApplicationResource extends Resource
                         TextEntry::make('jobOrder.employer.name')->label('Employer'),
                         TextEntry::make('jobOrder.salary')->label('Salary')->money('AED')->placeholder('—'),
                         TextEntry::make('jobOrder.openings')->label('Openings'),
+                    ]),
+                Section::make('Payments')
+                    ->columns(3)
+                    ->columnSpanFull()
+                    ->schema([
+                        TextEntry::make('fee')
+                            ->label('Fee')
+                            ->money('PHP'),
+                        TextEntry::make('amount_paid')
+                            ->label('Paid')
+                            ->state(fn (Application $record) => $record->amountPaid())
+                            ->money('PHP'),
+                        TextEntry::make('balance')
+                            ->label('Balance')
+                            ->state(fn (Application $record) => $record->balance())
+                            ->money('PHP')
+                            ->color(fn (Application $record) => $record->isFullyPaid() ? 'success' : 'danger'),
                     ]),
                 Section::make('Document checklist')
                     ->columnSpanFull()

@@ -20,6 +20,7 @@ class Application extends Model
         'status',
         'status_changed_at',
         'remarks',
+        'fee',
     ];
 
     protected function casts(): array
@@ -27,6 +28,7 @@ class Application extends Model
         return [
             'status' => ApplicationStatus::class,
             'status_changed_at' => 'datetime',
+            'fee' => 'decimal:2',
         ];
     }
 
@@ -104,6 +106,26 @@ class Application extends Model
     public function contracts(): HasMany
     {
         return $this->hasMany(Contract::class)->latest('id');
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class)->latest('id');
+    }
+
+    public function amountPaid(): float
+    {
+        return round((float) $this->payments()->whereNull('voided_at')->sum('amount'), 2);
+    }
+
+    public function balance():float
+    {
+        return max(0, round((float) $this->fee - $this->amountPaid(), 2));
+    }
+
+    public function isFullyPaid():bool
+    {
+        return $this->balance() <= 0;
     }
 
     public function documentChecklist(): array
@@ -207,11 +229,27 @@ class Application extends Model
         }
     }
 
+    public function ensurePaymentAllows(ApplicationStatus $to): void
+    {
+        if ($to === ApplicationStatus::PaymentDue && (float) $this->fee <= 0) {
+            throw new \DomainException("Cannot move to {$to->getLabel()}: this application has no fee. Move it straight to Visa Processing.");
+        }
+
+        if ($to === ApplicationStatus::VisaProcessing && ! $this->isFullyPaid()) {
+            $balance = number_format($this->balance(), 2);
+            
+            throw new \DomainException(
+                "Cannot move to {$to->getLabel()}: ₱{$balance} of the fee is still unpaid."
+            );
+        }
+    }
+
     public function ensureRequirementsMet(ApplicationStatus $to): void
     {
         $this->ensureMedicalAllows($to);
         $this->ensureEmployerAllows($to);
         $this->ensureOfferAllows($to);
         $this->ensureContractsAllow($to);
+        $this->ensurePaymentAllows($to);
     }
 }
