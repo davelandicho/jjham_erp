@@ -214,6 +214,31 @@ class ApplicationResource extends Resource
                             ->color(fn (Application $record) => $record->visas()->first()?->isExpired() ? 'danger' : null)
                             ->placeholder('-'),
                     ]),
+                Section::make('Exit clearance')
+                    ->columns(4)
+                    ->columnSpanFull()
+                    ->schema([
+                        TextEntry::make('latest_clearance_status')
+                            ->label('Status')
+                            ->state(fn (Application $record) => $record->exitClearances()->first()?->status)
+                            ->badge()
+                            ->placeholder('No RFP yet'),
+                        TextEntry::make('latest_clearance_number')
+                            ->label('Clearance number')
+                            ->state(fn (Application $record) => $record->exitClearances()->first()?->clearance_number)
+                            ->placeholder('—'),
+                        TextEntry::make('latest_clearance_issued')
+                            ->label('Issued')
+                            ->state(fn (Application $record) => $record->exitClearances()->first()?->issued_on)
+                            ->date('M j, Y')
+                            ->placeholder('—'),
+                        TextEntry::make('latest_clearance_expires')
+                            ->label('Expires')
+                            ->state(fn (Application $record) => $record->exitClearances()->first()?->expires_on)
+                            ->date('M j, Y')
+                            ->color(fn (Application $record) => $record->exitClearances()->first()?->isExpired() ? 'danger' : null)
+                            ->placeholder('—'),
+                    ]),
                 Section::make('Document checklist')
                     ->columnSpanFull()
                     ->description(fn (Application $record) => $record->checklistSummary())

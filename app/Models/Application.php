@@ -11,6 +11,7 @@ use App\Enums\MedicalResultStatus;
 use App\Enums\EmployerCommunicationType;
 use App\Enums\OfferStatus;
 use App\Enums\ContractType;
+use App\Enums\ExitClearanceStatus;
 
 class Application extends Model
 {
@@ -116,6 +117,11 @@ class Application extends Model
     public function visas(): HasMany
     {
         return $this->hasMany(Visa::class)->latest('id');
+    }
+
+    public function exitClearances(): HasMany
+    {
+        return $this->hasMany(ExitClearance::class)->latest('id');
     }
 
     public function amountPaid(): float
@@ -268,6 +274,43 @@ class Application extends Model
         }
     }
 
+    public function ensureExitClearanceAllows(ApplicationStatus $to): void
+    {
+        $gated = [
+            ApplicationStatus::RfpSubmitted,
+            ApplicationStatus::ExitClearanceIssued,
+            ApplicationStatus::ReadyForDeployment,
+        ];
+
+        if (! in_array($to, $gated, true)) {
+            return;
+        }
+
+        $latest = $this->exitClearances()->first();
+
+        if ($to === ApplicationStatus::RfpSubmitted) {
+            if (! $latest || $latest->status === ExitClearanceStatus::Returned) {
+                throw new \DomainException("Cannot move to {$to->getLabel()}: record the RFP submission first.");
+            }
+
+            return;
+        }
+
+        if (! $latest || ! $latest->isUsable()) {
+            $problem = match (true) {
+                ! $latest => 'no exit clearance has been recorded yet',
+                $latest->isExpired() => 'the latest exit clearance has expired',
+                default => "the latest exit clearance is \"{$latest->status->getLabel()}\"",
+            };
+
+            throw new \DomainException("Cannot move to {$to->getLabel()}: {$problem}.");
+        }
+
+        if ($to === ApplicationStatus::ReadyForDeployment && ! $this->visas()->first()?->isUsable()) {
+            throw new \DomainException("Cannot move to {$to->getLabel()}: the latest visa is missing or has expired.");
+        }
+    }
+
     public function ensureRequirementsMet(ApplicationStatus $to): void
     {
         $this->ensureMedicalAllows($to);
@@ -276,5 +319,6 @@ class Application extends Model
         $this->ensureContractsAllow($to);
         $this->ensurePaymentAllows($to);
         $this->ensureVisaAllows($to);
+        $this->ensureExitClearanceAllows($to);
     }
 }
