@@ -109,6 +109,10 @@ class Flight extends Model
             throw new \DomainException('The touchdown time must be after the departure time.');
         }
 
+        if (Carbon::parse($arrivedAt)->isFuture()) {
+            throw new \DomainException('Enter the actual touchdown time (it cannot be from the future).');
+        }
+
         $this->status = FlightStatus::Arrived;
         $this->arrived_at = $arrivedAt;
         $this->save();

@@ -298,6 +298,44 @@ class ApplicationResource extends Resource
                             ->dateTime('M j, Y g:i A')
                             ->placeholder('—'),
                     ]),
+                Section::make('Employment')
+                    ->columnSpanFull()
+                    ->description(fn (Application $record) => ($current = $record->employmentLogs()->first())
+                        ? "Current: {$current->status->getLabel()} since {$current->effective_on->format('M j, Y')}"
+                        : 'No employment status logged yet.')
+                    ->visible(fn (Application $record) => $record->status === ApplicationStatus::Arrived
+                        || $record->employmentLogs()->exists())
+                    ->schema([
+                        RepeatableEntry::make('employmentLogs')
+                            ->hiddenLabel()
+                            ->placeholder('No entries yet.')
+                            ->columns(5)
+                            ->schema([
+                                TextEntry::make('status')
+                                    ->badge(),
+                                TextEntry::make('effective_on')
+                                    ->label('Effective')
+                                    ->date('M j, Y'),
+                                TextEntry::make('source')
+                                    ->label('Reported by'),
+                                TextEntry::make('note')
+                                    ->label('Note')
+                                    ->state(fn ($record) => match (true) {
+                                        $record->correctedBy()->exists() => 'Corrected later',
+                                        $record->corrects_id !== null => 'Correction',
+                                        default => null,
+                                    })
+                                    ->color('warning')
+                                    ->placeholder('—'),
+                                TextEntry::make('encoder.name')
+                                    ->label('Encoded by')
+                                    ->placeholder('System'),
+                                TextEntry::make('remarks')
+                                    ->label('Remarks (internal)')
+                                    ->placeholder('—')
+                                    ->columnSpanFull(),
+                            ]),
+                    ]),                
                 Section::make('Status history')
                     ->columnSpanFull()
                     ->schema([

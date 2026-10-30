@@ -179,9 +179,10 @@ class FlightResource extends Resource
                     ->visible(fn (Flight $record) => $record->status === FlightStatus::Departed)
                     ->schema([
                         DateTimePicker::make('arrived_at')
-                            ->label('Actual touchdown time')
+                            ->label('Actual touchdown time (local time at destination)')
                             ->seconds(false)
-                            ->default(fn (Flight $record) => $record->arrives_at)
+                            ->default(fn (Flight $record) => $record->arrives_at->isFuture() ? now() : $record->arrives_at)
+                            ->maxDate(now())
                             ->required(),
                     ])
                     ->action(fn (Flight $record, array $data, Action $action) => static::attempt(

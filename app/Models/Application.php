@@ -130,6 +130,11 @@ class Application extends Model
         return $this->hasMany(Flight::class)->latest('id');
     }
 
+    public function EmploymentLogs(): HasMany
+    {
+        return $this->hasMany(EmploymentStatusLog::class)->latest('id');
+    }
+
     public function amountPaid(): float
     {
         return round((float) $this->payments()->whereNull('voided_at')->sum('amount'), 2);
