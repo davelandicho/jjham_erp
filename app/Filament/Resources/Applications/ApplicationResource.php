@@ -266,6 +266,38 @@ class ApplicationResource extends Resource
                                     ->placeholder('—'),
                             ]),
                     ]),
+                Section::make('Flight')
+                    ->columns(4)
+                    ->columnSpanFull()
+                    ->schema([
+                        TextEntry::make('latest_flight_status')
+                            ->label('Status')
+                            ->state(fn (Application $record) => $record->flights()->first()?->status)
+                            ->badge()
+                            ->placeholder('No flight yet'),
+                        TextEntry::make('latest_flight_number')
+                            ->label('Flight')
+                            ->state(fn (Application $record) => ($f = $record->flights()->first())
+                                ? "{$f->flight_number} ({$f->airline}) · {$f->origin} → {$f->destination}"
+                                : null)
+                            ->placeholder('—'),
+                        TextEntry::make('latest_flight_departure')
+                            ->label(fn (Application $record) => $record->flights()->first()?->departed_at
+                                ? 'Departed' : 'Scheduled departure')
+                            ->state(fn (Application $record) => ($f = $record->flights()->first())
+                                ? ($f->departed_at ?? $f->departs_at)
+                                : null)
+                            ->dateTime('M j, Y g:i A')
+                            ->placeholder('—'),
+                        TextEntry::make('latest_flight_arrival')
+                            ->label(fn (Application $record) => $record->flights()->first()?->arrived_at
+                                ? 'Touchdown' : 'Scheduled arrival')
+                            ->state(fn (Application $record) => ($f = $record->flights()->first())
+                                ? ($f->arrived_at ?? $f->arrives_at)
+                                : null)
+                            ->dateTime('M j, Y g:i A')
+                            ->placeholder('—'),
+                    ]),
                 Section::make('Status history')
                     ->columnSpanFull()
                     ->schema([

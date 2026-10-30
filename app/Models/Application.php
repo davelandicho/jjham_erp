@@ -12,6 +12,7 @@ use App\Enums\EmployerCommunicationType;
 use App\Enums\OfferStatus;
 use App\Enums\ContractType;
 use App\Enums\ExitClearanceStatus;
+use App\Enums\FlightStatus;
 
 class Application extends Model
 {
@@ -122,6 +123,11 @@ class Application extends Model
     public function exitClearances(): HasMany
     {
         return $this->hasMany(ExitClearance::class)->latest('id');
+    }
+
+    public function flights(): HasMany
+    {
+        return $this->hasMany(Flight::class)->latest('id');
     }
 
     public function amountPaid(): float
@@ -311,6 +317,49 @@ class Application extends Model
         }
     }
 
+    public function ensureFlightAllows(ApplicationStatus $to): void 
+    {
+        $gated = [
+            ApplicationStatus::ReadyForDeployment,
+            ApplicationStatus::Departed,
+            ApplicationStatus::Arrived,
+        ];
+
+        if (! in_array($to, $gated, true)) {
+            return;
+        }
+
+        $flight = $this->flights()->first();
+
+        if (! $flight || $flight->status === FlightStatus::Cancelled) {
+            throw new \DomainException("Cannot move to {$to->getLabel()}: no active flight has been recorded yet.");
+        }
+
+        if ($to === ApplicationStatus::ReadyForDeployment) {
+            $departureDay = $flight->departs_at->copy()->startOfDay();
+            $clearance = $this->exitClearances()->first();
+            $visa = $this->visas()->first();
+
+            if ($clearance?->expires_on && $clearance->expires_on->lt($departureDay)) {
+                throw new \DomainException("Cannot move to {$to->getLabel()}: the exit clearance expires before the flight date.");
+            }
+
+            if ($visa?->expires_on && $visa->expires_on->lt($departureDay)) {
+                throw new \DomainException("Cannot moce to {$TO->getLabel()}: the visa expires before the flight date.");
+            }
+
+            return;
+        }
+
+        $needed = $to ===ApplicationStatus::Departed
+            ? [FlightStatus::Departed, FlightStatus::Arrived]
+            : [FlightStatus::Arrived];
+
+        if (! in_array($flight->status, $needed, true)) {
+            throw new \DomainException("Cannot move to {$to->getLabel()}: the flight is still \"{$flight->status->getLabel()}\".");
+        }
+    }
+
     public function ensureRequirementsMet(ApplicationStatus $to): void
     {
         $this->ensureMedicalAllows($to);
@@ -320,5 +369,6 @@ class Application extends Model
         $this->ensurePaymentAllows($to);
         $this->ensureVisaAllows($to);
         $this->ensureExitClearanceAllows($to);
+        $this->ensureFlightAllows($to);
     }
 }
