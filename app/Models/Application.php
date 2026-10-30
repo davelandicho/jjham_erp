@@ -13,6 +13,9 @@ use App\Enums\OfferStatus;
 use App\Enums\ContractType;
 use App\Enums\ExitClearanceStatus;
 use App\Enums\FlightStatus;
+use App\Enums\ClosureReason;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\DB;
 
 class Application extends Model
 {
@@ -24,6 +27,8 @@ class Application extends Model
         'remarks',
         'fee',
     ];
+
+    public ?string $statusRemarks = null;
 
     protected function casts(): array
     {
@@ -75,6 +80,7 @@ class Application extends Model
                         : $application->getOriginal('status'),
                     'to_status' => $application->status,
                     'changed_by' => auth()->id(),
+                    'remarks' => $application->statusRemarks,
                 ]);
             }
         });
@@ -133,6 +139,54 @@ class Application extends Model
     public function EmploymentLogs(): HasMany
     {
         return $this->hasMany(EmploymentStatusLog::class)->latest('id');
+    }
+
+    public function closure(): HasOne
+    {
+        return $this->hasOne(CaseClosure::class);
+    }
+
+    public function close(
+        ClosureReason $reason,
+        $closedOn,
+        string $details,
+        bool $refundDue,
+        ?string $evidencePath = null,
+        ?string $evidenceName = null,
+    ): void {
+        $target = $reason->applicationStatus();
+
+        if (! $this->status->canMoveTo($target) || $this->status === $target) {
+            throw new \DomainException("A case that is {$this->status->getLabel()} cannot be closed.");
+        }
+
+        DB::transaction(function () use ($reason, $closedOn, $details, $refundDue, $evidencePath, $evidenceName, $target) {
+            $this->closure()->create([
+                'reason' => $reason,
+                'closed_on' => $closedOn,
+                'details' => trim($details),
+                'refund_due' => $refundDue,
+                'evidence_path' => $evidencePath,
+                'evidence_name' => $evidenceName,
+            ]);
+
+            $this->status = $target;
+            $this->statusRemarks = "{$reason->getLabel()}: " . trim($details);
+            $this->save();
+        });
+    }
+
+    public function putOnHold(string $reason): void
+    {
+        $reason = trim($reason);
+
+        if (blank($reason)) {
+            throw new \DomainException('A reason is required to put a case on hold.');
+        }
+
+        $this->status = ApplicationStatus::OnHold;
+        $this->statusRemarks = $reason;
+        $this->save();
     }
 
     public function amountPaid(): float
@@ -365,6 +419,21 @@ class Application extends Model
         }
     }
 
+    public function ensureClosureAllows(ApplicationStatus $to): void
+    {
+        if (in_array($to, [ApplicationStatus::Closed, ApplicationStatus::Withdrawn], true)) {
+            $closure = $this->closure()->first();
+
+            if (! $closure || $closure->reason->applicationStatus() !== $to) {
+                throw new \DomainException("Use \"Close case\" to move a case to {$to->getLabel()}; a closure reason is required.");
+            }
+        }
+
+        if ($to === ApplicationStatus::OnHold && blank($this->statusRemarks)) {
+            throw new \DomainException('Use "Put on hold"; a reason is required.');
+        }
+    }
+
     public function ensureRequirementsMet(ApplicationStatus $to): void
     {
         $this->ensureMedicalAllows($to);
@@ -375,5 +444,6 @@ class Application extends Model
         $this->ensureVisaAllows($to);
         $this->ensureExitClearanceAllows($to);
         $this->ensureFlightAllows($to);
+        $this->ensureClosureAllows($to);
     }
 }

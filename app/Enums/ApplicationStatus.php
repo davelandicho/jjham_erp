@@ -100,7 +100,7 @@ enum ApplicationStatus: string implements HasLabel, HasColor
         }
 
         // The PDF: Withdrawn and On Hold can be reached from any open status.
-        if (in_array($next, [self::Withdrawn, self::OnHold], true)) {
+        if (in_array($next, [self::Withdrawn, self::Closed, self::OnHold], true)) {
             return ! in_array($this, [self::Withdrawn, self::Closed, self::Arrived], true);
         }
 

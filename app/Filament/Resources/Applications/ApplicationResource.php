@@ -28,10 +28,24 @@ use Filament\Schemas\Components\Section;
 use Filament\Support\Enums\Width;
 use Filament\Infolists\Components\RepeatableEntry;
 use Closure;
-
+use App\Enums\ClosureReason;
+use App\Filament\Concerns\CatchesDomainErrors;
+use Filament\Actions\Action;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Toggle;
+use Filament\Support\Facades\Storage;
 
 class ApplicationResource extends Resource
 {
+    use CatchesDomainErrors;
+
+    private const VIA_ACTIONS = [
+        ApplicationStatus::OnHold,
+        ApplicationStatus::Closed,
+        ApplicationStatus::Withdrawn,
+    ];
+
     protected static ?string $model = Application::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
@@ -59,7 +73,7 @@ class ApplicationResource extends Resource
                         $current = $record?->status ?? ApplicationStatus::Registered;
 
                         return collect(ApplicationStatus::cases())
-                            ->filter(fn (ApplicationStatus $case) => $current->canMoveTo($case))
+                            ->filter(fn (ApplicationStatus $case) => $case === $current || ($current->canMoveTo($case) && ! in_array($case, self::VIA_ACTIONS, true)))
                             ->mapWithKeys(fn (ApplicationStatus $case) => [$case->value => $case->getLabel()])
                             ->all();
                     })
@@ -128,11 +142,69 @@ class ApplicationResource extends Resource
                     ->slideOver()
                     ->modalWidth(Width::FiveExtraLarge),
                 EditAction::make(),
+
+                Action::make('putOnHold')
+                    ->label('Put on hold')
+                    ->icon(Heroicon::OutlinedPauseCircle)
+                    ->color('warning')
+                    ->visible(fn (Application $record) => $record->status !== ApplicationStatus::OnHold
+                        && $record->status->canMoveTo(ApplicationStatus::OnHold))
+                    ->schema([
+                        Textarea::make('reason')
+                            ->label('Why is this case paused?')
+                            ->required(),
+                    ])
+                    ->action(fn (Application $record, array $data, Action $action) => static::attempt(
+                        $action, fn () => $record->putOnHold($data['reason'])
+                    )),
+
+                Action::make('closeCase')
+                    ->label('Close case')
+                    ->icon(Heroicon::OutlinedLockClosed)
+                    ->color('danger')
+                    ->visible(fn (Application $record) => $record->status->canMoveTo(ApplicationStatus::Closed)
+                        && ! in_array($record->status, [ApplicationStatus::Closed, ApplicationStatus::Withdrawn], true))
+                    ->modalHeading('Close this case')
+                    ->modalDescription('This is permanent. A closed or withdrawn case cannot be reopened.')
+                    ->modalSubmitActionLabel('Close case')
+                    ->schema([
+                        Select::make('reason')
+                            ->options(ClosureReason::class)
+                            ->required(),
+                        DatePicker::make('closed_on')
+                            ->label('Closure date')
+                            ->default(today())
+                            ->maxDate(today())
+                            ->required(),
+                        Textarea::make('details')
+                            ->label('Details')
+                            ->required(),
+                        Toggle::make('refund_due')
+                            ->label('Refund due')
+                            // Pre-ticked when the applicant has paid anything
+                            ->default(fn (Application $record) => $record->amountPaid() > 0)
+                            ->helperText(fn (Application $record) => 'Paid so far: ₱' . number_format($record->amountPaid(), 2)),
+                        FileUpload::make('evidence_path')
+                            ->label('Supporting evidence (optional)')
+                            ->disk('local')
+                            ->directory('closures')
+                            ->visibility('private')
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'application/pdf'])
+                            ->maxSize(10240)
+                            ->storeFileNamesIn('evidence_name'),
+                    ])
+                    ->action(fn (Application $record, array $data, Action $action) => static::attempt(
+                        $action, fn () => $record->close(
+                            $data['reason'] instanceof ClosureReason ? $data['reason'] : ClosureReason::from($data['reason']),
+                            $data['closed_on'],
+                            $data['details'],
+                            (bool) ($data['refund_due'] ?? false),
+                            $data['evidence_path'] ?? null,
+                            $data['evidence_name'] ?? null,
+                        )
+                    )),
+
                 DeleteAction::make(),
-            ])
-            ->recordAction(ViewAction::class)
-            ->toolbarActions([
-                    DeleteBulkAction::make(),
             ]);
     }
 
@@ -150,7 +222,38 @@ class ApplicationResource extends Resource
                         TextEntry::make('created_at')->label('Applied')->dateTime('M j, Y'),
                         TextEntry::make('remarks')->placeholder('—'),
                     ]),
-
+                Section::make('Closure')
+                    ->columns(4)
+                    ->columnSpan(1)
+                    ->visible(fn (Application $record) => $record->closure()->exists())
+                    ->schema([
+                        TextEntry::make('closure.reason')
+                            ->label('Reason')
+                            ->badge()
+                            ->color('danger'),
+                        TextEntry::make('closure.closed_on')
+                            ->label('Closed on')
+                            ->date('M j, Y'),
+                        TextEntry::make('closure.refund_due')
+                            ->label('Refund due')
+                            ->badge()
+                            ->formatStateUsing(fn ($state) => $state ? 'Yes — Finance to check' : 'No')
+                            ->color(fn ($state) => $state ? 'danger' : 'gray'),
+                        TextEntry::make('closure.encoder.name')
+                            ->label('Closed by')
+                            ->placeholder('System'),
+                        TextEntry::make('closure.details')
+                            ->label('Details')
+                            ->columnSpanFull(),
+                        TextEntry::make('closure.evidence_name')
+                            ->label('Evidence')
+                            ->url(fn (Application $record) => $record->closure?->evidence_path
+                                ? Storage::disk('local')->temporaryUrl($record->closure->evidence_path, now()->addMinutes(5))
+                                : null)
+                            ->openUrlInNewTab()
+                            ->color('primary')
+                            ->placeholder('None'),
+                    ]),
                 Section::make('Applicant')
                     ->columns(5)
                     ->columnSpan(1)
@@ -357,6 +460,11 @@ class ApplicationResource extends Resource
                                 TextEntry::make('created_at')
                                     ->label('When')
                                     ->dateTime('M j, Y g:i A'),
+                                TextEntry::make('remarks')
+                                    ->hiddenLabel()
+                                    ->columnSpanFull()
+                                    ->color('gray')
+                                    ->hidden(fn ($record) => blank($record->remarks)),
                             ]),
                     ]),
             ]);
