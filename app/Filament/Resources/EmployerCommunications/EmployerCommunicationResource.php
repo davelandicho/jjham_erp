@@ -8,19 +8,23 @@ use App\Filament\Resources\EmployerCommunications\Pages\ManageEmployerCommunicat
 use App\Models\Application;
 use App\Models\EmployerCommunication;
 use BackedEnum;
-use Filament\Actions\Action;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
 
 class EmployerCommunicationResource extends Resource
@@ -103,56 +107,99 @@ class EmployerCommunicationResource extends Resource
             ]);
     }
 
-    public static function table(Table $table): Table
-    {
-        return $table
-            ->columns([
-                TextColumn::make('application.applicant.last_name')
-                    ->label('Last name')
-                    ->searchable(),
-                TextColumn::make('application.applicant.first_name')
-                    ->label('First name')
-                    ->searchable(),
-                TextColumn::make('application.jobOrder.position')
-                    ->label('Position')
-                    ->toggleable(),
-                TextColumn::make('type')
-                    ->badge(),
-                TextColumn::make('channel')
-                    ->toggleable(),
-                TextColumn::make('communicated_on')
-                    ->label('Date')
-                    ->date('M j, Y')
-                    ->sortable(),
-                TextColumn::make('contact_name')
-                    ->label('Contact')
-                    ->description(fn (EmployerCommunication $record) => $record->contact_number)
-                    ->placeholder('—')
-                    ->toggleable(),
-                TextColumn::make('notes')
-                    ->limit(40)
-                    ->placeholder('—')
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('encoder.name')
-                    ->label('Encoded by')
-                    ->placeholder('—')
-                    ->toggleable(isToggledHiddenByDefault: true),
-            ])
-            ->defaultSort('id', 'desc')
-            ->filters([
-                SelectFilter::make('type')
-                    ->options(EmployerCommunicationType::class),
-            ])
-            ->recordActions([
-                Action::make('evidence')
-                    ->icon(Heroicon::OutlinedEye)
-                    ->color('gray')
-                    ->visible(fn (EmployerCommunication $record) => filled($record->evidence_path))
-                    ->url(fn (EmployerCommunication $record) => Storage::disk('local')
-                        ->temporaryUrl($record->evidence_path, now()->addMinutes(5)))
-                    ->openUrlInNewTab(),
-                // No Edit or Delete on purpose — the employer log is permanent.
-            ]);
+public static function table(Table $table): Table
+{
+    return $table
+        // One row per case, even though this resource saves log entries
+        ->query(fn () => Application::query()->with(['applicant', 'jobOrder', 'employerCommunications']))
+        ->columns([
+            TextColumn::make('applicant.last_name')
+                ->label('Last name')
+                ->searchable()
+                ->sortable(),
+            TextColumn::make('applicant.first_name')
+                ->label('First name')
+                ->searchable(),
+            TextColumn::make('jobOrder.position')
+                ->label('Position')
+                ->searchable(),
+            TextColumn::make('status')
+                ->badge(),
+            TextColumn::make('employer_communications_count')
+                ->label('Entries')
+                ->counts('employerCommunications')
+                ->sortable(),
+            TextColumn::make('latest_entry')
+                ->label('Latest entry')
+                ->badge()
+                ->state(fn (Application $record) => $record->employerCommunications->first()?->type)
+                ->placeholder('None yet'),
+            TextColumn::make('latest_entry_on')
+                ->label('Date')
+                ->date('M j, Y')
+                ->state(fn (Application $record) => $record->employerCommunications->first()?->communicated_on)
+                ->placeholder('—'),
+        ])
+        ->defaultSort('id', 'desc')
+        ->filters([
+            SelectFilter::make('type')
+                ->label('Has entry')
+                ->options(EmployerCommunicationType::class)
+                ->query(fn (Builder $query, array $data) => $query->when(
+                    filled($data['value']),
+                    fn (Builder $query) => $query->whereHas(
+                        'employerCommunications',
+                        fn (Builder $entries) => $entries->where('type', $data['value']),
+                    ),
+                )),
+        ])
+        ->recordActions([
+            ViewAction::make()
+                ->slideOver()
+                ->modalWidth(Width::FiveExtraLarge)
+                ->modalHeading(fn (Application $record) => "{$record->applicant->full_name} — {$record->jobOrder->position}"),
+            // No Edit or Delete on purpose — the employer log is permanent.
+        ]);
+}
+
+public static function infolist(Schema $schema): Schema
+{
+    return $schema
+        ->columns(1)
+        ->components([
+            RepeatableEntry::make('employerCommunications')
+                ->hiddenLabel()
+                ->placeholder('No employer log entries yet.')
+                ->columns(4)
+                ->schema([
+                    TextEntry::make('type')
+                        ->label('What happened')
+                        ->badge(),
+                    TextEntry::make('communicated_on')
+                        ->label('Date')
+                        ->date('M j, Y'),
+                    TextEntry::make('channel'),
+                    TextEntry::make('encoder.name')
+                        ->label('Encoded by')
+                        ->placeholder('System'),
+                    TextEntry::make('contact_name')
+                        ->label('Contact')
+                        ->placeholder('—'),
+                    TextEntry::make('contact_number')
+                        ->label('Contact number')
+                        ->placeholder('—'),
+                    TextEntry::make('evidence_name')
+                        ->label('Evidence')
+                        ->url(fn (EmployerCommunication $record) => $record->evidence_path
+                            ? Storage::disk('local')->temporaryUrl($record->evidence_path, now()->addMinutes(5))
+                            : null)
+                        ->openUrlInNewTab()
+                        ->color('primary')
+                        ->placeholder('None'),
+                    TextEntry::make('notes')
+                        ->placeholder('—'),
+                ]),
+        ]);
     }
 
     public static function getPages(): array

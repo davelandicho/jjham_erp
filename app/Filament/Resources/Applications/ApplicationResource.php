@@ -6,8 +6,6 @@ use App\Filament\Resources\Applications\Pages\ManageApplications;
 use App\Models\Application;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\TextInput;
@@ -34,7 +32,9 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Toggle;
-use Filament\Support\Facades\Storage;
+use Illuminate\Support\Facades\Storage;
+use Filament\Schemas\Components\Utilities\Get;
+use Illuminate\Validation\Rules\Unique;
 
 class ApplicationResource extends Resource
 {
@@ -67,7 +67,14 @@ class ApplicationResource extends Resource
                     ->getOptionLabelFromRecordUsing(fn (JobOrder $record) => "{$record->position} - {$record->employer->name}")
                     ->searchable()
                     ->preload()
-                    ->required(),
+                    ->required()
+                    ->unique(
+                        ignoreRecord: true,
+                        modifyRuleUsing: fn (Unique $rule, Get $get) => $rule->where('applicant_id', $get('applicant_id')),
+                    )
+                    ->validationMessages([
+                        'unique' => 'This applicant already has an application for this job order.',
+                    ]),
                 Select::make('status')
                     ->options(function (?Application $record) {
                         $current = $record?->status ?? ApplicationStatus::Registered;
@@ -204,7 +211,6 @@ class ApplicationResource extends Resource
                         )
                     )),
 
-                DeleteAction::make(),
             ]);
     }
 
@@ -317,6 +323,36 @@ class ApplicationResource extends Resource
                             ->color(fn (Application $record) => $record->visas()->first()?->isExpired() ? 'danger' : null)
                             ->placeholder('-'),
                     ]),
+                    Section::make('Refunds')
+                        ->columnSpan(1)
+                        ->visible(fn (Application $record) => $record->refunds()->exists())
+                        ->schema([
+                            RepeatableEntry::make('refunds')
+                                ->hiddenLabel()
+                                ->columns(5)
+                                ->schema([
+                                    TextEntry::make('status')
+                                        ->badge(),
+                                    TextEntry::make('amount')
+                                        ->money('PHP'),
+                                    TextEntry::make('requester.name')
+                                        ->label('Requested by')
+                                        ->placeholder('—'),
+                                    TextEntry::make('decider.name')
+                                        ->label('Decided by')
+                                        ->placeholder('—'),
+                                    TextEntry::make('refunded_on')
+                                        ->label('Refunded')
+                                        ->date('M j, Y')
+                                        ->placeholder('—'),
+                                    TextEntry::make('reason')
+                                        ->columnSpanFull(),
+                                    TextEntry::make('decision_remarks')
+                                        ->label('Decision remarks')
+                                        ->placeholder('—')
+                                        ->columnSpanFull(),
+                                ]),
+                        ]),
                 Section::make('Exit clearance')
                     ->columns(4)
                     ->columnSpanFull()

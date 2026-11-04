@@ -86,7 +86,7 @@ class Payment extends Model
         return $this->belongsTo(Application::class);
     }
 
-    public function reciever():BelongsTo
+    public function receiver():BelongsTo
     {
         return $this->belongsTo(User::class, 'received_by');
     }

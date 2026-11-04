@@ -16,6 +16,7 @@ use App\Enums\FlightStatus;
 use App\Enums\ClosureReason;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\DB;
+use App\Enums\RefundStatus;
 
 class Application extends Model
 {
@@ -146,6 +147,11 @@ class Application extends Model
         return $this->hasOne(CaseClosure::class);
     }
 
+    public function refunds(): HasMany
+    {
+        return $this->hasMany(Refund::class)->latest('id');
+    }
+
     public function close(
         ClosureReason $reason,
         $closedOn,
@@ -197,6 +203,15 @@ class Application extends Model
     public function balance():float
     {
         return max(0, round((float) $this->fee - $this->amountPaid(), 2));
+    }
+
+    public function refundableAmount(): float
+    {
+        $alreadyRefunded = (float) $this->refunds()
+            ->where('status', RefundStatus::Refunded)
+            ->sum('amount');
+
+        return max(0, round($this->amountPaid() - $alreadyRefunded, 2));
     }
 
     public function isFullyPaid():bool
