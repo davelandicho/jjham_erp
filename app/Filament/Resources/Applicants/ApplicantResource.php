@@ -22,6 +22,12 @@ use Filament\Forms\Components\Select;
 use Filament\Actions\ViewAction;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
+use App\Support\PassportScanReader;
+use Filament\Forms\Components\FileUpload;
+use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Utilities\Set;
+use Illuminate\Support\Arr;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class ApplicantResource extends Resource
 {
@@ -34,6 +40,17 @@ class ApplicantResource extends Resource
         return $schema
             ->columns(2)
             ->components([
+                FileUpload::make('passport_scan')
+                    ->label('Scan passport (auto-fill)')
+                    ->helperText('Upload the bio page as JPG or PNG. The fields below fill in automatically; check them against the passport before saving.')
+                    ->image()
+                    ->acceptedFileTypes(['image/jpeg', 'image/png'])
+                    ->maxSize(10240)
+                    ->storeFiles(false)
+                    ->dehydrated(false)
+                    ->live()
+                    ->afterStateUpdated(fn ($state, Set $set) => static::fillFromScan($state, $set))
+                    ->columnSpanFull(),
                 TextInput::make('last_name')
                     ->required(),   
                 TextInput::make('first_name')
@@ -74,6 +91,56 @@ class ApplicantResource extends Resource
                 Textarea::make('experience')
                     ->columnSpanFull(),
             ]);
+    }
+
+    protected static function fillFromScan($state, Set $set): void
+    {
+        $file = collect(Arr::wrap($state))->first();
+
+        if (! $file instanceof TemporaryUploadedFile) {
+            return; // file was removed, nothing to read
+        }
+
+        $mrz = PassportScanReader::read($file->getRealPath());
+
+        if (! $mrz) {
+            Notification::make()
+                ->title('No passport MRZ found')
+                ->body('Try a straight, clear scan that shows the two lines at the bottom of the bio page.')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        foreach (['last_name', 'first_name', 'birthdate', 'sex', 'passport_number', 'passport_expiry_date'] as $field) {
+            if (filled($mrz[$field])) {
+                $set($field, $mrz[$field]);
+            }
+        }
+
+        if ($mrz['nationality_code'] === 'PHL') {
+            $set('nationality', 'Filipino');
+        }
+
+        $failed = array_keys(array_filter($mrz['checks'], fn (bool $ok) => ! $ok));
+
+        if ($failed) {
+            Notification::make()
+                ->title('Check these against the passport: ' . str_replace('_', ' ', implode(', ', $failed)))
+                ->body('The scan was read, but these check digits did not match, so the reading may be wrong.')
+                ->warning()
+                ->persistent()
+                ->send();
+
+            return;
+        }
+
+        Notification::make()
+            ->title('Passport read')
+            ->body('Review the filled fields, then type the middle name, issue date and place of issue.')
+            ->success()
+            ->send();
     }
 
     public static function table(Table $table): Table
