@@ -6,6 +6,8 @@ use App\Enums\VisaStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use App\Enums\ApplicationStatus;
 
 class Visa extends Model
 {
@@ -42,6 +44,33 @@ class Visa extends Model
 
         static::deleting(function () {
             throw new \DomainException('Visa records can never be deleted.');
+        });
+    }
+
+    public static function recordReleased(Application $application, array $data): self
+    {
+        if (in_array($application->status, [ApplicationStatus::Closed, ApplicationStatus::Withdrawn], true)) {
+            throw new \DomainException('This Application is closed or withdrawn. A visa cannot be recorded on it.');
+        }
+
+        if ($application->visas()->first()?->status === VisaStatus::Applied) {
+            throw new \DomainException('This application already has a visa in progress. Press Release on that record instead.');
+        }
+
+        return DB::transaction(function () use ($application, $data) {
+            $visa = $application->visas()->create([
+                'applied_on' => $data['applied_on'] ?? null,
+            ]);
+
+            $visa->release(
+                $data['visa_number'],
+                $data['released_on'],
+                $data['expires_on'],
+                $data[visa_path],
+                $data['visa_name'] ?? basename($data['visa_path']),
+            );
+
+            return $visa;
         });
     }
 

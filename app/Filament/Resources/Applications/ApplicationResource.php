@@ -307,7 +307,7 @@ class ApplicationResource extends Resource
                             ->badge()
                             ->placeholder('Not applied'),
                         TextEntry::make('latest_visa_number')
-                            ->label('Released')
+                            ->label('Visa Number')
                             ->state(fn (Application $record) => $record->visas()->first()?->visa_number)
                             ->placeholder('-'),
                         TextEntry::make('latest_visa_released')

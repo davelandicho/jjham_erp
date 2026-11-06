@@ -21,9 +21,12 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
+use App\Filament\Concerns\CatchesDomainErrors;
 
 class VisaResource extends Resource
 {
+    use CatchesDomainErrors;
+
     protected static ?string $model = Visa::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedGlobeAlt;
@@ -32,24 +35,56 @@ class VisaResource extends Resource
     {
         return $schema
             ->components([
-                Select::make('application_id')
-                    ->label('Application')
-                    ->options(fn () => Application::with(['applicant', 'jobOrder'])
-                        ->latest('id')
-                        ->get()
-                        ->mapWithKeys(fn (Application $a) => [
-                            $a->id => "{$a->applicant->full_name} — {$a->jobOrder->position} ({$a->status->getLabel()})",
-                        ]))
-                    ->searchable()
-                    ->required()
+                static::applicationSelect()
                     ->disabledOn('edit'),
 
                 DatePicker::make('applied_on')
                     ->label('Date the employer filed')
-                    ->default(today())
-                    ->maxDate(today())
-                    ->required(),
+                    ->helperText('Optional. Leave empty if the employer did not say.')
+                    ->maxDate(today()),
             ]);
+    }
+
+    public static function releaseFields():array
+    {
+        return [
+            TextInput::make('visa_number')
+                ->label('Visa / entry permit number')
+                ->required()
+                ->maxLength(255),
+            DatePicker::make('released_on')
+                ->label('Date released')
+                ->default(today())
+                ->maxDate(today())
+                ->required(),
+            DatePicker::make('expires_on')
+                ->label('Expiry date')
+                ->after('released_on')
+                ->required(),
+            FileUpload::make('visa_path')
+                ->label('Visa copy (PDF from employer)')
+                ->disk('local')
+                ->directory('visas')
+                ->visibility('private')
+                ->acceptedFileTypes(['image/jpeg', 'image/png', 'application/pdf'])
+                ->maxSize(10240)
+                ->storeFileNamesIn('visa_name')
+                ->required(),
+        ];
+    }
+
+    public static function applicationSelect(): Select
+    {
+        return Select::make('application_id')
+            ->label('Application')
+            ->options(fn () => Application::with(['applicant', 'jobOrder'])
+                ->latest('id')
+                ->get()
+                ->mapWithKeys(fn (Application $a) => [
+                    $a->id => "{$a->applicant->full_name} — {$a->jobOrder->position} ({$a->status->getLabel()})",
+                ]))
+            ->searchable()
+            ->required();
     }
 
     public static function table(Table $table): Table
@@ -72,6 +107,7 @@ class VisaResource extends Resource
                 TextColumn::make('applied_on')
                     ->label('Filed')
                     ->date('M j, Y')
+                    ->placeholder('-')
                     ->sortable(),
                 TextColumn::make('released_on')
                     ->label('Released')
@@ -104,36 +140,15 @@ class VisaResource extends Resource
                     ->icon(Heroicon::OutlinedCheckBadge)
                     ->color('success')
                     ->visible(fn (Visa $record) => $record->status === VisaStatus::Applied)
-                    ->schema([
-                        TextInput::make('visa_number')
-                            ->label('Visa / entry permit number')
-                            ->required()
-                            ->maxLength(255),
-                        DatePicker::make('released_on')
-                            ->label('Date released')
-                            ->default(today())
-                            ->maxDate(today())
-                            ->required(),
-                        DatePicker::make('expires_on')
-                            ->label('Expiry date')
-                            ->after('released_on')
-                            ->required(),
-                        FileUpload::make('visa_path')
-                            ->label('Visa copy')
-                            ->disk('local')
-                            ->directory('visas')
-                            ->visibility('private')
-                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'application/pdf'])
-                            ->maxSize(10240)
-                            ->storeFileNamesIn('visa_name')
-                            ->required(),
-                    ])
-                    ->action(fn (Visa $record, array $data) => $record->release(
-                        $data['visa_number'],
-                        $data['released_on'],
-                        $data['expires_on'],
-                        $data['visa_path'],
-                        $data['visa_name'] ?? basename($data['visa_path']),
+                    ->schema(static::releaseFields())
+                    ->action(fn (Visa $record, array $data, Action $action) => static::attempt(
+                        $action, fn () => $record->release(
+                            $data['visa_number'],
+                            $data['released_on'],
+                            $data['expires_on'],
+                            $data['visa_path'],
+                            $data['visa_name'] ?? basename($data['visa_path']),
+                        )
                     )),
 
                 Action::make('deny')
@@ -141,14 +156,14 @@ class VisaResource extends Resource
                     ->icon(Heroicon::OutlinedXCircle)
                     ->color('danger')
                     ->visible(fn (Visa $record) => $record->status === VisaStatus::Applied)
-                    ->modalDescription('If the employer re-files, add a new visa record afterwards.')
-                    ->schema([
+                    ->modalDescription('Copy the reason from the employer\'s email. If the employer re-files, add a new visa record afterwards.')                    ->schema([
                         Textarea::make('reason')
                             ->label('Why was the visa denied?')
                             ->required(),
                     ])
-                    ->action(fn (Visa $record, array $data) => $record->deny($data['reason'])),
-
+                    ->action(fn (Visa $record, array $data, Action $action) => static::attempt(
+                        $action, fn () => $record->deny($data['reason'])
+                    )),
                 EditAction::make()
                     ->visible(fn (Visa $record) => $record->status === VisaStatus::Applied),
                 // No Delete on purpose — visa records are permanent.
