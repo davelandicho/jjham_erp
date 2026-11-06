@@ -6,6 +6,7 @@ use App\Enums\ExitClearanceStatus;
 use App\Filament\Resources\ExitClearances\Pages\ManageExitClearances;
 use App\Models\Application;
 use App\Models\ExitClearance;
+use App\Enums\NavigationGroup;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -21,12 +22,17 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
+use UnitEnum;
 
 class ExitClearanceResource extends Resource
 {
     protected static ?string $model = ExitClearance::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedPaperAirplane;
+
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Processing;
+
+    protected static ?int $navigationSort = 4;
 
     public static function form(Schema $schema): Schema
     {

@@ -6,6 +6,7 @@ use App\Enums\PaymentMethod;
 use App\Filament\Resources\Payments\Pages\ManagePayments;
 use App\Models\Application;
 use App\Models\Payment;
+use App\Enums\NavigationGroup;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
@@ -21,12 +22,17 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
+use UnitEnum;
 
 class PaymentResource extends Resource
 {
     protected static ?string $model = Payment::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
+
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Finance;
+
+    protected static ?int $navigationSort = 1;
 
     public static function form(Schema $schema): Schema
     {

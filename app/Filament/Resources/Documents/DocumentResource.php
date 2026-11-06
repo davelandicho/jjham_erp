@@ -7,6 +7,7 @@ use App\Filament\Resources\Documents\Pages\ManageDocuments;
 use App\Models\Application;
 use App\Models\Document;
 use App\Models\DocumentType;
+use App\Enums\NavigationGroup;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
@@ -22,12 +23,17 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
+use UnitEnum;
 
 class DocumentResource extends Resource
 {
     protected static ?string $model = Document::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
+
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::DocumentsMedical;
+
+    protected static ?int $navigationSort = 1;
 
     public static function form(Schema $schema): Schema
     {

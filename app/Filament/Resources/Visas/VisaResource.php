@@ -6,6 +6,7 @@ use App\Enums\VisaStatus;
 use App\Filament\Resources\Visas\Pages\ManageVisas;
 use App\Models\Application;
 use App\Models\Visa;
+use App\Enums\NavigationGroup;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -22,6 +23,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
 use App\Filament\Concerns\CatchesDomainErrors;
+use UnitEnum;
 
 class VisaResource extends Resource
 {
@@ -30,6 +32,10 @@ class VisaResource extends Resource
     protected static ?string $model = Visa::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedGlobeAlt;
+
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Processing;
+
+    protected static ?int $navigationSort = 3;
 
     public static function form(Schema $schema): Schema
     {

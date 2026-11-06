@@ -8,6 +8,7 @@ use App\Filament\Concerns\CatchesDomainErrors;
 use App\Filament\Resources\Refunds\Pages\ManageRefunds;
 use App\Models\Application;
 use App\Models\Refund;
+use App\Enums\NavigationGroup;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
@@ -23,6 +24,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
+use UnitEnum;
 
 class RefundResource extends Resource
 {
@@ -31,6 +33,10 @@ class RefundResource extends Resource
     protected static ?string $model = Refund::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedReceiptRefund;
+
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Finance;
+
+    protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
     {

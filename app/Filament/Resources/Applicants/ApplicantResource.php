@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Applicants;
 
 use App\Filament\Resources\Applicants\Pages\ManageApplicants;
 use App\Models\Applicant;
+use App\Enums\NavigationGroup;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -28,12 +29,17 @@ use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Utilities\Set;
 use Illuminate\Support\Arr;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use UnitEnum;
 
 class ApplicantResource extends Resource
 {
     protected static ?string $model = Applicant::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUsers;
+
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Recruitment;
+
+    protected static ?int $navigationSort = 1;
 
     public static function form(Schema $schema): Schema
     {

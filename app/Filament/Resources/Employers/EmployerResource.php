@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Employers;
 
 use App\Filament\Resources\Employers\Pages\ManageEmployers;
 use App\Models\Employer;
+use App\Enums\NavigationGroup;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -17,12 +18,17 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Notifications\Notification;
+use UnitEnum;
 
 class EmployerResource extends Resource
 {
     protected static ?string $model = Employer::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice;
+
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Recruitment;
+
+    protected static ?int $navigationSort = 4;
 
     public static function form(Schema $schema): Schema
     {

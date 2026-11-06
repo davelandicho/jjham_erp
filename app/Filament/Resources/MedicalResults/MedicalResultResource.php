@@ -7,6 +7,7 @@ use App\Enums\MedicalSource;
 use App\Filament\Resources\MedicalResults\Pages\ManageMedicalResults;
 use App\Models\Application;
 use App\Models\MedicalResult;
+use App\Enums\NavigationGroup;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -25,12 +26,17 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Clinic;
+use UnitEnum;
 
 class MedicalResultResource extends Resource
 {
     protected static ?string $model = MedicalResult::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBeaker;
+
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::DocumentsMedical;
+
+    protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
     {

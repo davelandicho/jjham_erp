@@ -7,6 +7,7 @@ use App\Enums\MwoStatus;
 use App\Filament\Resources\Contracts\Pages\ManageContracts;
 use App\Models\Application;
 use App\Models\Contract;
+use App\Enums\NavigationGroup;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -25,12 +26,17 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
+use UnitEnum;
 
 class ContractResource extends Resource
 {
     protected static ?string $model = Contract::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentDuplicate;
+
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Processing;
+
+    protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
     {

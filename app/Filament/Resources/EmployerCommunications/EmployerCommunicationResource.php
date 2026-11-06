@@ -7,6 +7,7 @@ use App\Enums\EmployerCommunicationType;
 use App\Filament\Resources\EmployerCommunications\Pages\ManageEmployerCommunications;
 use App\Models\Application;
 use App\Models\EmployerCommunication;
+use App\Enums\NavigationGroup;
 use BackedEnum;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
@@ -26,12 +27,17 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
+use UnitEnum;
 
 class EmployerCommunicationResource extends Resource
 {
     protected static ?string $model = EmployerCommunication::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChatBubbleLeftRight;
+
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Recruitment;
+
+    protected static ?int $navigationSort = 5;
 
     protected static ?string $navigationLabel = 'Employer log';
 

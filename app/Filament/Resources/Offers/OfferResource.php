@@ -6,6 +6,7 @@ use App\Enums\OfferStatus;
 use App\Filament\Resources\Offers\Pages\ManageOffers;
 use App\Models\Application;
 use App\Models\Offer;
+use App\Enums\NavigationGroup;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -22,12 +23,17 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
+use UnitEnum;
 
 class OfferResource extends Resource
 {
     protected static ?string $model = Offer::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentCheck;
+
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Processing;
+
+    protected static ?int $navigationSort = 1;
 
     public static function form(Schema $schema): Schema
     {

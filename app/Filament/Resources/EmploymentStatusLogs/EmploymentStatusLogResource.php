@@ -8,6 +8,7 @@ use App\Enums\ReportSource;
 use App\Filament\Resources\EmploymentStatusLogs\Pages\ManageEmploymentStatusLogs;
 use App\Models\Application;
 use App\Models\EmploymentStatusLog;
+use App\Enums\NavigationGroup;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
@@ -23,12 +24,17 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
+use UnitEnum;
 
 class EmploymentStatusLogResource extends Resource
 {
     protected static ?string $model = EmploymentStatusLog::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBriefcase;
+
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Deployment;
+
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $navigationLabel = 'Employment Status';
 

@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Applications;
 
 use App\Filament\Resources\Applications\Pages\ManageApplications;
 use App\Models\Application;
+use App\Enums\NavigationGroup;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\EditAction;
@@ -35,6 +36,7 @@ use Filament\Forms\Components\Toggle;
 use Illuminate\Support\Facades\Storage;
 use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Validation\Rules\Unique;
+use UnitEnum;
 
 class ApplicationResource extends Resource
 {
@@ -48,7 +50,11 @@ class ApplicationResource extends Resource
 
     protected static ?string $model = Application::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedFolderOpen;
+
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Recruitment;
+
+    protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
     {

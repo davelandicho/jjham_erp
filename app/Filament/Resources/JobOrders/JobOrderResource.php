@@ -4,6 +4,7 @@ namespace App\Filament\Resources\JobOrders;
 
 use App\Filament\Resources\JobOrders\Pages\ManageJobOrders;
 use App\Models\JobOrder;
+use App\Enums\NavigationGroup;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -18,12 +19,17 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\CheckboxList;
+use UnitEnum;
 
 class JobOrderResource extends Resource
 {
     protected static ?string $model = JobOrder::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
+
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Recruitment;
+
+    protected static ?int $navigationSort = 3;
 
     public static function form(Schema $schema): Schema
     {

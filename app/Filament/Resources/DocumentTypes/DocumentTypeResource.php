@@ -4,6 +4,7 @@ namespace App\Filament\Resources\DocumentTypes;
 
 use App\Filament\Resources\DocumentTypes\Pages\ManageDocumentTypes;
 use App\Models\DocumentType;
+use App\Enums\NavigationGroup;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -19,12 +20,17 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Notifications\Notification;
+use UnitEnum;
 
 class DocumentTypeResource extends Resource
 {
     protected static ?string $model = DocumentType::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;
+
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Settings;
+
+    protected static ?int $navigationSort = 1;
 
     public static function form(Schema $schema): Schema
     {

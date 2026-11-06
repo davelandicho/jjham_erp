@@ -7,6 +7,7 @@ use App\Enums\FlightStatus;
 use App\Filament\Resources\Flights\Pages\ManageFlights;
 use App\Models\Application;
 use App\Models\Flight;
+use App\Enums\NavigationGroup;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -23,12 +24,17 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
+use UnitEnum;
 
 class FlightResource extends Resource
 {
     protected static ?string $model = Flight::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTicket;
+
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Deployment;
+
+    protected static ?int $navigationSort = 1;
 
     public static function form(Schema $schema): Schema
     {

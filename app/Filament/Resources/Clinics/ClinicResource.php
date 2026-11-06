@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Clinics;
 
 use App\Filament\Resources\Clinics\Pages\ManageClinics;
 use App\Models\Clinic;
+use App\Enums\NavigationGroup;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\TextInput;
@@ -16,12 +17,17 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class ClinicResource extends Resource
 {
     protected static ?string $model = Clinic::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice2;
+
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Settings;
+
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $navigationLabel = 'Preferred clinics';
 
