@@ -151,6 +151,7 @@ class EmploymentStatusLogResource extends Resource
                     ->openUrlInNewTab(),
 
                 Action::make('correct')
+                    ->authorize('update')
                     ->label('Correct')
                     ->icon(Heroicon::OutlinedPencilSquare)
                     ->color('warning')

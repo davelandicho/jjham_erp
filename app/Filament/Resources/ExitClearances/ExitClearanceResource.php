@@ -110,6 +110,7 @@ class ExitClearanceResource extends Resource
                     ->openUrlInNewTab(),
 
                 Action::make('issue')
+                    ->authorize('update')
                     ->label('Issue')
                     ->icon(Heroicon::OutlinedCheckBadge)
                     ->color('success')
@@ -147,6 +148,7 @@ class ExitClearanceResource extends Resource
                     )),
 
                 Action::make('returned')
+                    ->authorize('update')
                     ->label('Returned')
                     ->icon(Heroicon::OutlinedArrowUturnLeft)
                     ->color('danger')

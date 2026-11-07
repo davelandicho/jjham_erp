@@ -171,6 +171,7 @@ class MedicalResultResource extends Resource
                     ->openUrlInNewTab(),
 
                 Action::make('verify')
+                    ->authorize('update')
                     ->icon(Heroicon::OutlinedCheckBadge)
                     ->color('success')
                     ->requiresConfirmation()

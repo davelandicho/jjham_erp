@@ -157,6 +157,7 @@ class ApplicationResource extends Resource
                 EditAction::make(),
 
                 Action::make('putOnHold')
+                    ->authorize('update')
                     ->label('Put on hold')
                     ->icon(Heroicon::OutlinedPauseCircle)
                     ->color('warning')
@@ -172,6 +173,7 @@ class ApplicationResource extends Resource
                     )),
 
                 Action::make('closeCase')
+                    ->authorize('update')
                     ->label('Close case')
                     ->icon(Heroicon::OutlinedLockClosed)
                     ->color('danger')

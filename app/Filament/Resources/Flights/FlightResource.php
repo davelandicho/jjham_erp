@@ -162,6 +162,7 @@ class FlightResource extends Resource
                     ->openUrlInNewTab(),
 
                 Action::make('departed')
+                    ->authorize('update')
                     ->label('Mark departed')
                     ->icon(Heroicon::OutlinedPaperAirplane)
                     ->color('info')
@@ -179,6 +180,7 @@ class FlightResource extends Resource
                     )),
 
                 Action::make('arrived')
+                    ->authorize('update')
                     ->label('Confirm touchdown')
                     ->icon(Heroicon::OutlinedMapPin)
                     ->color('success')
@@ -196,6 +198,7 @@ class FlightResource extends Resource
                     )),
 
                 Action::make('cancel')
+                    ->authorize('update')
                     ->label('Cancel / rebook')
                     ->icon(Heroicon::OutlinedXCircle)
                     ->color('danger')

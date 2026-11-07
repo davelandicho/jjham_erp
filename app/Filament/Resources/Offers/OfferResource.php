@@ -159,6 +159,7 @@ class OfferResource extends Resource
                     ->openUrlInNewTab(),
 
                 Action::make('recordSignature')
+                    ->authorize('update')
                     ->label('Record signature')
                     ->icon(Heroicon::OutlinedPencilSquare)
                     ->color('success')
@@ -187,6 +188,7 @@ class OfferResource extends Resource
                     )),
 
                 Action::make('decline')
+                    ->authorize('update')
                     ->label('Mark declined')
                     ->icon(Heroicon::OutlinedXCircle)
                     ->color('danger')

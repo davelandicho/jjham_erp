@@ -164,6 +164,7 @@ class DocumentResource extends Resource
                     ->openUrlInNewTab(),
 
                 Action::make('verify')
+                    ->authorize('update')
                     ->icon(Heroicon::OutlinedCheckCircle)
                     ->color('success')
                     ->requiresConfirmation()
@@ -174,6 +175,7 @@ class DocumentResource extends Resource
                     ])),
 
                 Action::make('reject')
+                    ->authorize('update')
                     ->icon(Heroicon::OutlinedXCircle)
                     ->color('danger')
                     ->visible(fn (Document $record) => $record->status === DocumentStatus::Pending)
@@ -189,6 +191,7 @@ class DocumentResource extends Resource
                     ])),
 
                 Action::make('newVersion')
+                    ->authorize('create')
                     ->label('New version')
                     ->icon(Heroicon::OutlinedArrowUpTray)
                     ->color('gray')

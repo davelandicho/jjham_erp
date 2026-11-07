@@ -142,6 +142,7 @@ class PaymentResource extends Resource
                     ->openUrlInNewTab(),
 
                 Action::make('void')
+                    ->authorize('update')
                     ->label('Void')
                     ->icon(Heroicon::OutlinedNoSymbol)
                     ->color('danger')

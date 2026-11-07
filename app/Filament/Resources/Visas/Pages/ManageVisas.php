@@ -19,6 +19,7 @@ class ManageVisas extends ManageRecords
     {
         return [
             Action::make('recordReleased')
+                ->authorize('create')
                 ->label('Record released visa')
                 ->icon(Heroicon::OutlinedDocumentArrowDown)
                 ->color('success')

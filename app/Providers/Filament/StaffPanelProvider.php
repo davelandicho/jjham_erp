@@ -18,6 +18,8 @@ use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use App\Enums\NavigationGroup;
 
 class StaffPanelProvider extends PanelProvider
 {
@@ -43,6 +45,11 @@ class StaffPanelProvider extends PanelProvider
             ->widgets([
                 AccountWidget::class,
                 FilamentInfoWidget::class,
+            ])
+            ->plugins([
+                FilamentShieldPlugin::make()
+                    ->navigationGroup(NavigationGroup::Settings)
+                    ->navigationSort(4),
             ])
             ->middleware([
                 EncryptCookies::class,

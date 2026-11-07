@@ -142,6 +142,7 @@ class VisaResource extends Resource
                     ->openUrlInNewTab(),
 
                 Action::make('release')
+                    ->authorize('update')
                     ->label('Release')
                     ->icon(Heroicon::OutlinedCheckBadge)
                     ->color('success')
@@ -158,6 +159,7 @@ class VisaResource extends Resource
                     )),
 
                 Action::make('deny')
+                    ->authorize('update')
                     ->label('Deny')
                     ->icon(Heroicon::OutlinedXCircle)
                     ->color('danger')

@@ -161,6 +161,7 @@ class ContractResource extends Resource
                     ->color('gray'),
 
                 Action::make('recordSignature')
+                    ->authorize('update')
                     ->label('Record signature')
                     ->icon(Heroicon::OutlinedPencilSquare)
                     ->color('success')
@@ -189,6 +190,7 @@ class ContractResource extends Resource
                     )),
 
                 Action::make('submitToMwo')
+                    ->authorize('update')
                     ->label('Submit to MWO')
                     ->icon(Heroicon::OutlinedPaperAirplane)
                     ->color('warning')
@@ -205,6 +207,7 @@ class ContractResource extends Resource
                     ->action(fn (Contract $record, array $data) => $record->submitToMwo($data['submitted_on'])),
 
                 Action::make('mwoVerified')
+                    ->authorize('update')
                     ->label('MWO verified')
                     ->icon(Heroicon::OutlinedCheckBadge)
                     ->color('success')
@@ -232,6 +235,7 @@ class ContractResource extends Resource
                     )),
 
                 Action::make('mwoReturned')
+                    ->authorize('update')
                     ->label('MWO returned')
                     ->icon(Heroicon::OutlinedArrowUturnLeft)
                     ->color('danger')

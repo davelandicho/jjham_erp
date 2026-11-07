@@ -139,6 +139,7 @@ class RefundResource extends Resource
                     ->openUrlInNewTab(),
 
                 Action::make('approve')
+                    ->authorize(fn (): bool => auth()->user()->can('Approve:Refund'))
                     ->icon(Heroicon::OutlinedCheckCircle)
                     ->color('success')
                     ->visible(fn (Refund $record) => $record->status === RefundStatus::Requested)
@@ -154,6 +155,7 @@ class RefundResource extends Resource
                     )),
 
                 Action::make('decline')
+                    ->authorize(fn (): bool => auth()->user()->can('Approve:Refund'))
                     ->icon(Heroicon::OutlinedXCircle)
                     ->color('danger')
                     ->visible(fn (Refund $record) => $record->status === RefundStatus::Requested)
@@ -170,6 +172,7 @@ class RefundResource extends Resource
                     )),
 
                 Action::make('markRefunded')
+                    ->authorize('update')
                     ->label('Record payout')
                     ->icon(Heroicon::OutlinedBanknotes)
                     ->color('primary')
