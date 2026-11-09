@@ -20,6 +20,8 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use App\Enums\NavigationGroup;
+use Filament\Auth\MultiFactor\App\AppAuthentication;
+use Filament\Auth\MultiFactor\Email\EmailAuthentication;
 
 class StaffPanelProvider extends PanelProvider
 {
@@ -32,6 +34,14 @@ class StaffPanelProvider extends PanelProvider
             ->id('staff')
             ->path('staff')
             ->login()
+            ->profile(isSimple: false)
+            ->multiFactorAuthentication([
+                EmailAuthentication::make()
+                    ->codeExpiryMinutes(5),
+                AppAuthentication::make()
+                    ->brandName('JJHAM Staff')
+                    ->recoverable(),
+            ], isRequired: true)
             ->colors([
                 'primary' => Color::hex('#0f9cae'),
             ])
