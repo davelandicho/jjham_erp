@@ -1,58 +1,52 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# JJHAM Portal
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Staff panel (Filament) and Applicant Portal for JJHAM recruitment processing.
 
-## About Laravel
+**Stack:** PHP 8.5 · Laravel 13 · Filament v5 · MySQL · Livewire
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## First-time setup (Mac)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
-
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+Needs: PHP 8.5, Composer, Node, MySQL, and Tesseract (`brew install tesseract`, for passport scan-to-read).
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/davelandicho/jjham_erp.git jjham_portal
+cd jjham_portal
+composer install
+npm install && npm run build
+cp .env.example .env
+php artisan key:generate
+mysql -u root -e "CREATE DATABASE jjham_portal;"
+php artisan migrate
+php artisan db:seed --class=RoleSeeder
+php artisan make:filament-user
+php artisan shield:super-admin
+php artisan storage:link
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Check `TESSERACT_PATH` in `.env` with `which tesseract`.
 
-## Contributing
+## Running it (2 terminal tabs)
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+| Tab | Command | Why |
+|---|---|---|
+| 1 | `php artisan serve` | the website: http://127.0.0.1:8000/staff |
+| 2 | `php artisan queue:work` | sends emails, including 2FA login codes |
 
-## Code of Conduct
+Restart `queue:work` after changing code or `.env`.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Logging in (2FA is required)
 
-## Security Vulnerabilities
+Locally, emails are not really sent (`MAIL_MAILER=log`). After you type your password, get the code from the log:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+grep "sign-in code" storage/logs/laravel.log | tail -1
+```
 
-## License
+You can also set up an authenticator app in **Profile**.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Rules
+
+- **Fake test data only.** Never commit `.env`, real applicant data, or database dumps.
+- Pull before starting work: `git pull`
+- Portal work goes on its own branch (e.g. `git switch -c portal-yourname`), not `main`.
+- After pulling, run `composer install`, `npm install` and `php artisan migrate` in case something changed.
