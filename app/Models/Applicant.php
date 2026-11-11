@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class Applicant extends Model
+class Applicant extends Authenticatable
 {
     protected $fillable = [
         'first_name', 'middle_name', 'last_name', 'birthdate', 'sex',
@@ -16,7 +16,7 @@ class Applicant extends Model
         'height_cm', 'weight_kg', 'experience',
     ];
 
-    protected $hidden = ['passport_number_hash'];
+    protected $hidden = ['passport_number_hash', 'password', 'remember_token'];
 
     protected function casts(): array
     {
@@ -25,6 +25,7 @@ class Applicant extends Model
             'passport_issue_date' => 'date',
             'passport_expiry_date' => 'date',
             'passport_number' => 'encrypted',
+            'password' => 'hashed',
         ];
     }
 
