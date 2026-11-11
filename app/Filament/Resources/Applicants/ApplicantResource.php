@@ -30,6 +30,7 @@ use Filament\Schemas\Components\Utilities\Set;
 use Illuminate\Support\Arr;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use UnitEnum;
+use Filament\Actions\Action;
 
 class ApplicantResource extends Resource
 {
@@ -225,6 +226,26 @@ class ApplicantResource extends Resource
                     ->modalWidth(Width::FiveExtraLarge),
                 EditAction::make()
                     ->modalWidth(Width::FourExtraLarge),
+                Action::make('issuePortalCode')
+                    ->authorize('update')
+                    ->label('Portal code')
+                    ->icon(Heroicon::OutlinedKey)
+                    ->color('gray')
+                    ->visible(fn (Applicant $record) => filled($record->email) || filled($record->mobile))
+                    ->requiresConfirmation()
+                    ->modalHeading('Issue a portal setup code?')
+                    ->modalDescription('The applicant enters this code once at /portal/setup to choose a password. It expires in 72 hours. Any older code stops working.')
+                    ->modalSubmitActionLabel('Issue code')
+                    ->action(function (Applicant $record) {
+                        $code = $record->issuePortalSetupCode();
+
+                        Notification::make()
+                            ->title("Setup code for {$record->full_name}: {$code}")
+                            ->body('Give this code to the applicant now. It will not be shown again. Valid for 72 hours.')
+                            ->success()
+                            ->persistent()
+                            ->send();
+                    }),
                 DeleteAction::make(),
             ])
             ->recordAction(ViewAction::class)

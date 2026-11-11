@@ -12,7 +12,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->redirectGuestsTo(fn (Request $request) => $request->is('portal*')
+            ? route('portal.login')
+            : route('filament.staff.auth.login'));
+
+        $middleware->redirectUsersTo(fn (Request $request) => $request->is('portal*')
+            ? route('portal.home')
+            : '/staff');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
