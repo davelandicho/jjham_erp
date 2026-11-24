@@ -52,6 +52,16 @@ class Applicant extends Authenticatable
         return $this->hasMany(Application::class);
     }
 
+    public function otps(): HasMany
+    {
+        return $this->hasMany(ApplicantOtp::class);
+    }
+
+    public function devices(): HasMany
+    {
+        return $this->hasMany(ApplicantDevice::class);
+    }
+
     public function issuePortalSetupCode(): string
     {
         $alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ23456789';
